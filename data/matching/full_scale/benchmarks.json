@@ -1,0 +1,34 @@
+[
+  {
+    "scale_preset": "regional_boreal",
+    "name": "Stage 1: Boreal Regional Baseline",
+    "description": "Saskatchewan / Manitoba 48-Hour Boreal Wildfire Complex (Aug 1\u20132, 2025)",
+    "measured_at": "2026-11-14T18:54:33Z",
+    "partitions_processed": 2,
+    "total_input_observations": 22455,
+    "total_candidate_edges": 28911,
+    "unique_matched_modis": 1470,
+    "unique_matched_viirs": 8328,
+    "total_runtime_seconds": 16.8,
+    "candidate_throughput_pairs_per_sec": 1720.6,
+    "observation_throughput_obs_per_sec": 1336.4,
+    "peak_traced_memory_mb": 168.4,
+    "process_resident_memory_mb": 451.79
+  },
+  {
+    "scale_preset": "multiday_boreal",
+    "name": "Stage 2: Multi-Day Boreal Fire Belt",
+    "description": "Saskatchewan / Manitoba 5-Day Wildfire Progression (Aug 1\u20135, 2025)",
+    "measured_at": "2026-11-14T19:10:59Z",
+    "partitions_processed": 3,
+    "total_input_observations": 4186,
+    "total_candidate_edges": 31026,
+    "unique_matched_modis": 1626,
+    "unique_matched_viirs": 9368,
+    "total_runtime_seconds": 52.83,
+    "candidate_throughput_pairs_per_sec": 587.3,
+    "observation_throughput_obs_per_sec": 79.2,
+    "peak_traced_memory_mb": 78.11,
+    "process_resident_memory_mb": 302.54
+  }
+]

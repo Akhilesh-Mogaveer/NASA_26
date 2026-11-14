@@ -301,4 +301,109 @@ export async function runMatching(params = {}) {
   }
 }
 
+/**
+ * Phase 4.4: Get bounded observation points for interactive map rendering
+ */
+export async function getMapObservations(params = {}) {
+  try {
+    const response = await apiClient.get('/api/matching/map-observations', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch map observations',
+    };
+  }
+}
+
+/**
+ * Phase 4.4: Get candidate association vector lines for interactive map rendering
+ */
+export async function getMapLines(params = {}) {
+  try {
+    const response = await apiClient.get('/api/matching/map-lines', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch map association lines',
+    };
+  }
+}
+
+/**
+ * Phase 4.4: Get complete observation detail and candidate edges by observation ID
+ */
+export async function getObservationDetail(obsId) {
+  try {
+    const response = await apiClient.get(`/api/matching/observation/${encodeURIComponent(obsId)}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch observation details',
+    };
+  }
+}
+
+/**
+ * Phase 4.4: Get filtered matching summary for arbitrary viewport or date range
+ */
+export async function getFilteredMatchingSummary(params = {}) {
+  try {
+    const response = await apiClient.get('/api/matching/filtered-summary', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch filtered summary',
+    };
+  }
+}
+
+/**
+ * Phase 4.5: Start a partitioned full-scale matching job in background
+ */
+export async function startFullScaleJob(params = {}) {
+  try {
+    const response = await apiClient.post('/api/matching/full-scale/start', params);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to start full-scale job',
+    };
+  }
+}
+
+/**
+ * Phase 4.5: Get live full-scale job progress and partition status
+ */
+export async function getFullScaleStatus() {
+  try {
+    const response = await apiClient.get('/api/matching/full-scale/status');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch full-scale status',
+    };
+  }
+}
+
+/**
+ * Phase 4.5: Get progressive real-data benchmarks across scales
+ */
+export async function getFullScaleBenchmarks() {
+  try {
+    const response = await apiClient.get('/api/matching/full-scale/benchmarks');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch full-scale benchmarks',
+    };
+  }
+}
+
 export default apiClient;

@@ -75,7 +75,7 @@ export default function App() {
           />
         )}
         {activeTab === 'matching' && <MatchingView />}
-        {activeTab === 'map' && <FireMapView />}
+        {activeTab === 'map' && <FireMapView setActiveTab={setActiveTab} />}
         {activeTab === 'comparison' && <ComparisonView />}
         {activeTab === 'activity' && <ActivityView />}
         {activeTab === 'anomalies' && <AnomalyView />}

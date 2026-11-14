@@ -9,14 +9,16 @@ import {
   ZoomIn, 
   AlertCircle,
   Globe,
-  Radio
+  Radio,
+  GitMerge,
+  ArrowRight
 } from 'lucide-react';
 import { MapContainer, TileLayer, CircleMarker, Popup, Tooltip } from 'react-leaflet';
 import Card from '../common/Card';
 import StatusBadge from '../common/StatusBadge';
 import { getGridDensity, getGeographicalAnalytics } from '../../api/client';
 
-export default function FireMapView() {
+export default function FireMapView({ setActiveTab }) {
   const [gridCells, setGridCells] = useState([]);
   const [topHotspots, setTopHotspots] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,6 +86,30 @@ export default function FireMapView() {
           <StatusBadge type="healthy" label={`${gridCells.length} Active 2° Cells`} />
         </div>
       </div>
+
+      {/* Cross-Navigation Callout to Matching Engine Map */}
+      {setActiveTab && (
+        <div className="p-3.5 rounded-xl bg-space-900 border border-space-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-accent-blue/15 border border-accent-blue/30 flex items-center justify-center text-accent-blue">
+              <GitMerge className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <span className="font-semibold text-white">Sensor Proximity Analysis:</span>
+              <span className="text-space-300 ml-1.5">
+                Need to inspect individual MODIS & VIIRS active-fire candidate associations and vector links?
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('matching')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent-blue/20 hover:bg-accent-blue/30 text-accent-blue font-medium border border-accent-blue/40 text-xs transition-all flex-shrink-0"
+          >
+            <span>Open Matching Map</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filters & Navigation Sidebar */}

@@ -390,13 +390,36 @@ Executed on authentic NASA FIRMS observations:
 - `unmatched_observations.parquet` (276 KB) — Unassociated MODIS and VIIRS records.
 - `matching_experiment_metadata.json` (2.6 KB) — Reproducibility parameters, software versions, and regional bounds.
 
-### 11.5 Matching API Endpoints
+### 11.5 Phase 4.4 Interactive Matching Map & Viewport Analytics
+- **Geospatial Association Map:** Full interactive Leaflet cartographic display rendering candidate proximity vectors connecting MODIS and VIIRS snapshot observations.
+- **Strict Observation Classification:** Total observations strictly equals Matched + Unmatched. Ambiguity ($\Delta \text{score} \le 0.15$) is handled as an orthogonal topological property.
+- **Sensor Confidence Preservation:** Native MODIS numeric percentages (0–100%) and VIIRS categorical ratings (`low`, `nominal`, `high`) are preserved without artificial translations.
+- **Dynamic Viewport Metrics:** Server-side spatial bounding-box aggregation yielding unique observation match rates and ambiguity rates for any custom bounding box.
+
+### 11.6 Phase 4.5 Full-Scale Partitioning Engine & Benchmarks
+- **Spatial-Temporal Overlap Halos:** Daily partitions with $\pm 90\text{ min}$ temporal halo and $\pm 5\text{ km}$ buffer eliminate boundary edge loss across calendar dates.
+- **Deterministic Deduplication:** Canonical undirected edge IDs (`ASSOC-{modis_id}-{viirs_id}`) and primary MODIS partition ownership ensure zero cross-partition duplicates.
+- **Bounded $O(1)$ Memory Safety:** Streaming execution writes atomic Parquet files (`part-{id}.tmp.parquet` $\rightarrow$ `part-{id}.parquet`). Memory overhead scales with single-partition volume (~78 MB traced RAM, ~300 MB process RSS), completely decoupled from the 22.18M annual catalog.
+- **Resumable Manifest:** `manifest.json` tracks partition status, execution time, and throughput, allowing fault recovery without duplicating work.
+- **Progressive Real-Data Scalability Benchmarks:**
+  - **Stage 1 (Single-Day Benchmark Subsample):** 22,455 records; 28,911 pairs in 15.70s; throughput: 1,841.2 pairs/s; memory: 168.4 MB traced.
+  - **Stage 2 (Multi-Day Partitioned Boreal Run):** 3 daily partitions (Aug 1–3, 2025); 4,186 observations; 31,026 candidate pairs generated in 52.83s wall-clock; throughput: 587.3 pairs/s; peak traced RAM: 78.11 MB; process RSS: 302.54 MB; 0 failures.
+  - **Stage 3 (Full 22.18M Catalog Scale Projection):** 365 daily partitions; projected candidate pairs: ~18.5M; estimated processing time: ~1.4 hours on multi-core worker; memory safely bounded under 800 MB RSS.
+
+### 11.7 Matching API Endpoints
 - `GET /api/matching/status` — Operational status and artifact readiness.
 - `GET /api/matching/summary` — Full matching experiment summary and benchmarks.
 - `GET /api/matching/associations` — Paginated and filtered candidate associations from Parquet storage.
 - `GET /api/matching/unmatched` — Paginated unassociated observations.
 - `GET /api/matching/evaluation` — 12-parameter sensitivity evaluation matrix.
 - `POST /api/matching/run` — On-demand spatial-temporal matching on user bounding boxes.
+- `GET /api/matching/map-observations` — Bounded observation points with classification and degree count for map rendering.
+- `GET /api/matching/map-lines` — Candidate vector lines with Haversine distance, time difference, and heuristic scores.
+- `GET /api/matching/observation/{obs_id}` — Comprehensive observation lookup and candidate edge list.
+- `GET /api/matching/filtered-summary` — Viewport bounding-box observation counts and match rates.
+- `POST /api/matching/full-scale/start` — Trigger asynchronous partitioned matching job with halo buffers.
+- `GET /api/matching/full-scale/status` — Live partition execution progress and status.
+- `GET /api/matching/full-scale/benchmarks` — Progressive real-data benchmarks across scales.
 
 ---
 

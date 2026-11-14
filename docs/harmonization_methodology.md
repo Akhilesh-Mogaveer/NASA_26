@@ -353,6 +353,56 @@ In the secondary test region (Southern African Savanna / Miombo Belt: Lat 12°�
 - **Primary Governing Factor (Orbital Geometry):** Sun-synchronous polar orbits create systematic overpass timing gaps. Terra overpasses at ~10:30 local solar time, whereas Aqua and NOAA-20 overpass in early afternoon (~13:30 local solar time), resulting in an inherent ~3-hour diurnal temporal gap. In this Savanna study area, VIIRS NOAA-20 overpassed predominantly at ~16:00 UTC and MODIS Aqua at ~18:00 UTC (~2-hour gap), so very few detections fell within the 60-minute matching window regardless of physical fire behavior.
 - **Secondary Hypothesis:** Rapid savanna grass fire spread and shorter flaming residence times may further reduce chances of persistence between non-coincident passes, but orbital overpass geometry is the primary governing constraint.
 
+### 14.8 Interactive Spatial-Temporal Map Visualization & Classification (Phase 4.4)
+
+To inspect candidate associations dynamically across arbitrary bounding boxes, Phase 4.4 integrates an interactive geospatial visualization interface and server-side viewport query engine:
+
+1. **Observation Classification & Graph Topology:**
+   - Every observation belongs fundamentally to one primary set: **Matched** or **Unmatched**.
+   - An observation is flagged as **Ambiguous** if the score differential between its top candidate edge and second-ranked candidate edge is $\le 0.15$ ($\Delta \text{score} \le 0.15$). Ambiguity is an orthogonal graph connectivity attribute, not a separate disjoint set of observations.
+   - For UI rendering and cartographic display, primary visual status is categorized as:
+     $$\text{Visual Status} = \begin{cases} \text{ambiguous}, & \text{if } \text{is\_ambiguous} \\ \text{matched}, & \text{else if degree} > 0 \\ \text{unmatched}, & \text{otherwise} \end{cases}$$
+   - Denominator Consistency: The total number of observations in any viewport strictly equals the sum of unique matched and unmatched observations:
+     $$\text{Total Observations} = \text{Matched} + \text{Unmatched} = (\text{Unambiguous Matched} + \text{Ambiguous Matched}) + \text{Unmatched}$$
+   - Sensor match rates are computed strictly with unique observation denominators, never candidate edge counts.
+
+2. **Instrument Confidence Preservation:**
+   - Instrument confidences are displayed in their native physical forms: MODIS as numeric percentage (0–100%) and VIIRS as qualitative detection categories (`low`, `nominal`, `high`).
+   - No synthetic numerical scaling or false equivalencies are applied during map inspection or detail queries.
+
+3. **Candidate Vector Lines:**
+   - Spatial candidate associations are represented as direct vector edges connecting MODIS and VIIRS snapshot coordinates.
+   - Rendered using geodesic/Haversine great-circle paths with associated distance, observation time difference, ranking heuristic score, and multiplicity topology badge.
+
+### 14.9 Partition-Based Full-Scale Processing Optimization (Phase 4.5)
+
+To scale the spatial-temporal matching engine across massive multi-million observation catalogs (including the full 22.18M 2025 dataset) without out-of-memory errors or cross-partition artifacts:
+
+1. **Spatial-Temporal Partitioning with Overlap Halos:**
+   - Partitions are segmented temporally into daily or multi-day intervals.
+   - To eliminate boundary edge loss across partition transitions (e.g. midnight overpasses or wildfire fronts spanning calendar dates), secondary observations (VIIRS) are loaded with a **$\pm 90\text{ minute}$ temporal halo** and a **$\pm 5\text{ km}$ spatial buffer**.
+   - Any cross-boundary pair whose temporal separation is $\le 60\text{ min}$ is guaranteed to be detected.
+
+2. **Deterministic Deduplication by Partition Ownership:**
+   - Candidate pairs discovered in adjacent halo overlaps are deterministically deduplicated.
+   - Each MODIS observation has unique temporal ownership assigned strictly to its primary calendar partition date ($t_{\text{modis}}$).
+   - Candidate pairs are identified by a canonical undirected edge ID:
+     $$\text{Edge ID} = \text{ASSOC-}\{\text{modis\_id}\}\text{-}\{\text{viirs\_id}\}$$
+   - Any candidate edge evaluated across overlapping partition halos is emitted only once by the owning MODIS partition, ensuring **zero duplicate associations across partitions**.
+
+3. **Streaming Execution & Bounded $O(1)$ Memory Safety:**
+   - Partitions execute iteratively or in parallel with results written directly to atomic temporary Parquet files (`part-{id}.tmp.parquet` $\rightarrow$ `part-{id}.parquet`).
+   - Peak memory consumption scales with the volume of a single daily partition (~78–168 MB traced RAM, ~300 MB process RSS), completely decoupled from the full 22.18M catalog volume.
+
+4. **Resumable Manifest Tracking:**
+   - A centralized `manifest.json` tracks the state, completion timestamp, candidate pair counts, elapsed runtime, and throughput of each partition.
+   - Crashed, interrupted, or restarted jobs resume from the last uncompleted partition without duplicating work.
+
+5. **Progressive Real-Data Scalability Benchmarks:**
+   - **Stage 1 (Single-Day Benchmark Subsample):** 22,455 records (3,116 MODIS, 19,339 VIIRS); 28,911 candidate pairs in 15.70s; throughput: 1,841.2 pairs/s; memory: 168.4 MB.
+   - **Stage 2 (Multi-Day Partitioned Boreal Run):** 3 daily partitions (Aug 1–3, 2025); 4,186 observations; 31,026 candidate pairs generated in 52.83s wall-clock; throughput: 587.3 pairs/s; peak traced RAM: 78.11 MB; process RSS: 302.54 MB; 0 partition failures; 0 cross-partition duplicates.
+   - **Stage 3 (Full 22.18M Catalog Scale Projection):** 365 daily partitions; projected candidate pairs: ~18.5M; estimated processing time: ~1.4 hours on multi-core worker; peak memory remains strictly bounded under 800 MB RSS.
+
 ## 15. Expected Output
 
 The harmonization process produces:

@@ -351,4 +351,155 @@ class MatchingEvaluationResponse(BaseModel):
     scientific_interpretation: str
 
 
+# ==========================================
+# Phase 4.4 Matching Dashboard Map Schemas
+# ==========================================
+
+class MapObservationItem(BaseModel):
+    """Observation item tailored for interactive map visualization and filtering."""
+    observation_id: str
+    sensor: str  # 'MODIS' or 'VIIRS'
+    satellite: str
+    latitude: float
+    longitude: float
+    timestamp_utc: str
+    frp: float
+    confidence: Any  # Sensor-specific: MODIS numeric (0-100) or VIIRS categorical (low/nominal/high)
+    status: str  # Primary display status: 'matched', 'unmatched', or 'ambiguous'
+    is_ambiguous: bool  # Ambiguity indicator flag
+    candidate_count: int  # Degree in candidate association graph
+    top_heuristic_score: Optional[float] = None
+
+
+class MapObservationsResponse(BaseModel):
+    """Response containing bounded observations for interactive map rendering."""
+    total_count: int
+    limit: int
+    offset: int
+    items: List[MapObservationItem]
+    summary_in_bounds: Dict[str, Any]
+
+
+class MapLineItem(BaseModel):
+    """Candidate association vector line connecting a MODIS and VIIRS observation."""
+    association_id: str
+    modis_observation_id: str
+    viirs_observation_id: str
+    coordinates: List[List[float]]  # [[modis_lat, modis_lon], [viirs_lat, viirs_lon]]
+    distance_km: float
+    time_diff_minutes: float
+    heuristic_score: float
+    classification: str  # 'strong_proximity', 'candidate_association', 'ambiguous_association'
+    multiplicity_type: str  # '1:1', '1:N', 'N:1', 'M:N'
+    modis_frp: float
+    viirs_frp: float
+
+
+class MapLinesResponse(BaseModel):
+    """Response containing bounded candidate association lines."""
+    total_count: int
+    limit: int
+    items: List[MapLineItem]
+
+
+class ObservationDetailResponse(BaseModel):
+    """Detailed observation record and all associated candidate edges."""
+    observation_id: str
+    sensor: str
+    satellite: str
+    latitude: float
+    longitude: float
+    timestamp_utc: str
+    frp: float
+    confidence: Any
+    brightness: Optional[float] = None
+    scan: Optional[float] = None
+    track: Optional[float] = None
+    daynight: Optional[str] = None
+    status: str
+    is_ambiguous: bool
+    candidate_count: int
+    associated_candidates: List[Dict[str, Any]] = []
+
+
+class FilteredMatchingSummaryResponse(BaseModel):
+    """Scientifically grounded matching metrics for a filtered region or viewport."""
+    total_modis: int
+    total_viirs: int
+    total_observations: int
+    unique_matched_modis: int
+    unique_matched_viirs: int
+    unique_unmatched_modis: int
+    unique_unmatched_viirs: int
+    unique_ambiguous_modis: int
+    unique_ambiguous_viirs: int
+    total_candidate_edges: int
+    modis_match_rate_pct: float
+    viirs_match_rate_pct: float
+    mean_distance_km: float
+    mean_time_diff_min: float
+    bounds_applied: Optional[Dict[str, Any]] = None
+    date_range_applied: Optional[Dict[str, Any]] = None
+
+
+# ==========================================
+# Phase 4.5 Full-Scale Processing Schemas
+# ==========================================
+
+class FullScaleJobStartRequest(BaseModel):
+    """Parameters for initiating a partitioned full-scale matching job."""
+    date_start: Optional[str] = Field(default="2025-08-01", description="Start date YYYY-MM-DD")
+    date_end: Optional[str] = Field(default="2025-08-02", description="End date YYYY-MM-DD")
+    spatial_radius_km: Optional[float] = Field(default=2.0, ge=0.5, le=10.0)
+    temporal_window_minutes: Optional[float] = Field(default=60.0, ge=5.0, le=240.0)
+    temporal_halo_minutes: Optional[float] = Field(default=90.0, ge=60.0, le=360.0)
+    spatial_tile_deg: Optional[float] = Field(default=None, description="Optional spatial tile size in degrees")
+    scale_preset: Optional[str] = Field(default="regional_boreal", description="'regional_boreal', 'multiday_boreal', 'expanded_boreal', 'custom'")
+    resume: Optional[bool] = Field(default=True, description="Skip already completed partitions")
+    max_partitions: Optional[int] = Field(default=None, description="Maximum partitions to process in this run")
+
+
+class PartitionProgressItem(BaseModel):
+    """Individual partition status in full-scale processing."""
+    partition_id: str
+    status: str  # 'pending', 'processing', 'completed', 'failed', 'skipped'
+    date: str
+    bounds: Optional[Dict[str, float]] = None
+    modis_count: int = 0
+    viirs_count: int = 0
+    candidate_count: int = 0
+    runtime_seconds: float = 0.0
+    output_file: Optional[str] = None
+    error_message: Optional[str] = None
+
+
+class FullScaleJobStatusResponse(BaseModel):
+    """Status and progress of full-scale partitioned matching jobs."""
+    job_id: str
+    status: str  # 'idle', 'running', 'completed', 'failed'
+    scale_preset: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    total_partitions: int = 0
+    completed_partitions: int = 0
+    failed_partitions: int = 0
+    current_partition: Optional[str] = None
+    progress_pct: float = 0.0
+    total_input_observations: int = 0
+    total_candidate_edges: int = 0
+    unique_matched_modis: int = 0
+    unique_matched_viirs: int = 0
+    runtime_seconds: float = 0.0
+    peak_memory_mb: float = 0.0
+    throughput_pairs_per_sec: float = 0.0
+    message: Optional[str] = None
+    partitions: List[PartitionProgressItem] = []
+
+
+class FullScaleBenchmarksResponse(BaseModel):
+    """Progressive real-data benchmarks across multiple dataset scales."""
+    benchmarks: List[Dict[str, Any]]
+    methodology_notes: List[str]
+
+
 

@@ -17,6 +17,13 @@ from app.models.schemas import (
     UnmatchedPageResponse,
     MatchingEvaluationResponse,
     SensitivityParameterRow,
+    MapObservationsResponse,
+    MapLinesResponse,
+    ObservationDetailResponse,
+    FilteredMatchingSummaryResponse,
+    FullScaleJobStartRequest,
+    FullScaleJobStatusResponse,
+    FullScaleBenchmarksResponse,
 )
 from app.services.matching_config import (
     MatchingConfig,
@@ -30,6 +37,16 @@ from app.services.matching import (
     get_matching_unmatched,
     get_matching_evaluation,
     execute_matching_workflow,
+)
+from app.services.matching_map import (
+    get_map_observations,
+    get_map_lines,
+    get_observation_detail,
+    get_filtered_matching_summary,
+)
+from app.services.matching_full_scale import (
+    FullScaleJobManager,
+    get_full_scale_benchmarks,
 )
 from app.config import settings
 
@@ -232,3 +249,170 @@ async def run_matching(
     )
 
     return MatchingSummaryResponse(**result["summary"])
+
+
+# ==========================================
+# Phase 4.4 Matching Dashboard Map Endpoints
+# ==========================================
+
+@router.get(
+    "/map-observations",
+    response_model=MapObservationsResponse,
+    summary="Get Bounded Observation Points for Map",
+)
+async def get_map_observations_endpoint(
+    min_lat: Optional[float] = Query(None, description="Minimum latitude bounding box limit"),
+    max_lat: Optional[float] = Query(None, description="Maximum latitude bounding box limit"),
+    min_lon: Optional[float] = Query(None, description="Minimum longitude bounding box limit"),
+    max_lon: Optional[float] = Query(None, description="Maximum longitude bounding box limit"),
+    sensor: str = Query("ALL", description="Sensor filter: 'ALL', 'MODIS', or 'VIIRS'"),
+    status: str = Query("ALL", description="Classification filter: 'ALL', 'MATCHED', 'UNMATCHED', or 'AMBIGUOUS'"),
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+    limit: int = Query(500, ge=1, le=2000, description="Maximum observations to return"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+) -> MapObservationsResponse:
+    """Retrieve spatial observation points with matched/unmatched/ambiguous status."""
+    data = get_map_observations(
+        min_lat=min_lat,
+        max_lat=max_lat,
+        min_lon=min_lon,
+        max_lon=max_lon,
+        sensor=sensor,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+    )
+    return MapObservationsResponse(**data)
+
+
+@router.get(
+    "/map-lines",
+    response_model=MapLinesResponse,
+    summary="Get Candidate Association Vector Lines for Map",
+)
+async def get_map_lines_endpoint(
+    min_lat: Optional[float] = Query(None, description="Minimum latitude"),
+    max_lat: Optional[float] = Query(None, description="Maximum latitude"),
+    min_lon: Optional[float] = Query(None, description="Minimum longitude"),
+    max_lon: Optional[float] = Query(None, description="Maximum longitude"),
+    min_score: float = Query(0.0, ge=0.0, le=1.0, description="Minimum heuristic score"),
+    classification: Optional[str] = Query(None, description="Filter by classification"),
+    multiplicity: Optional[str] = Query(None, description="Filter by multiplicity"),
+    limit: int = Query(300, ge=1, le=1000, description="Maximum vector lines to return"),
+) -> MapLinesResponse:
+    """Retrieve candidate association vector lines connecting MODIS and VIIRS points."""
+    data = get_map_lines(
+        min_lat=min_lat,
+        max_lat=max_lat,
+        min_lon=min_lon,
+        max_lon=max_lon,
+        min_score=min_score,
+        classification=classification,
+        multiplicity=multiplicity,
+        limit=limit,
+    )
+    return MapLinesResponse(**data)
+
+
+@router.get(
+    "/observation/{obs_id}",
+    response_model=ObservationDetailResponse,
+    summary="Get Detailed Observation Record and Candidate Edges",
+)
+async def get_observation_detail_endpoint(
+    obs_id: str,
+) -> ObservationDetailResponse:
+    """Retrieve individual observation metadata, sensor confidence, and associated candidate edges."""
+    data = get_observation_detail(obs_id)
+    if not data:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Observation with ID '{obs_id}' not found in active matching catalogs.",
+        )
+    return ObservationDetailResponse(**data)
+
+
+@router.get(
+    "/filtered-summary",
+    response_model=FilteredMatchingSummaryResponse,
+    summary="Get Filtered Matching Summary for Viewport",
+)
+async def get_filtered_summary_endpoint(
+    min_lat: Optional[float] = Query(None, description="Minimum latitude"),
+    max_lat: Optional[float] = Query(None, description="Maximum latitude"),
+    min_lon: Optional[float] = Query(None, description="Minimum longitude"),
+    max_lon: Optional[float] = Query(None, description="Maximum longitude"),
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+) -> FilteredMatchingSummaryResponse:
+    """Compute exact matching rates, candidate counts, and distance metrics for a bounded region."""
+    data = get_filtered_matching_summary(
+        min_lat=min_lat,
+        max_lat=max_lat,
+        min_lon=min_lon,
+        max_lon=max_lon,
+        start_date=start_date,
+        end_date=end_date,
+    )
+    return FilteredMatchingSummaryResponse(**data)
+
+
+# ==========================================
+# Phase 4.5 Full-Scale Processing Endpoints
+# ==========================================
+
+@router.post(
+    "/full-scale/start",
+    summary="Start Partitioned Full-Scale Matching Job",
+)
+async def start_full_scale_job_endpoint(
+    request: FullScaleJobStartRequest = Body(...),
+) -> Dict[str, Any]:
+    """Initiate a partitioned, resumable matching job over multi-day or regional datasets."""
+    manager = FullScaleJobManager()
+    result = manager.start_job(
+        date_start=request.date_start or "2025-08-01",
+        date_end=request.date_end or "2025-08-02",
+        spatial_radius_km=request.spatial_radius_km or 2.0,
+        temporal_window_minutes=request.temporal_window_minutes or 60.0,
+        temporal_halo_minutes=request.temporal_halo_minutes or 90.0,
+        scale_preset=request.scale_preset or "regional_boreal",
+        resume=request.resume if request.resume is not None else True,
+        max_partitions=request.max_partitions,
+    )
+    return result
+
+
+@router.get(
+    "/full-scale/status",
+    response_model=FullScaleJobStatusResponse,
+    summary="Get Full-Scale Job Progress and Partition Status",
+)
+async def get_full_scale_status_endpoint() -> FullScaleJobStatusResponse:
+    """Retrieve live status, partition progress, and throughput of full-scale matching jobs."""
+    manager = FullScaleJobManager()
+    status_data = manager.get_status()
+    return FullScaleJobStatusResponse(**status_data)
+
+
+@router.get(
+    "/full-scale/benchmarks",
+    response_model=FullScaleBenchmarksResponse,
+    summary="Get Progressive Real-Data Benchmarks Across Scales",
+)
+async def get_full_scale_benchmarks_endpoint() -> FullScaleBenchmarksResponse:
+    """Retrieve progressive benchmark measurements across regional, multi-day, and expanded scales."""
+    benchmarks = get_full_scale_benchmarks()
+    notes = [
+        "All benchmarks are measured on authentic NASA FIRMS 2025 observations (MODIS C6.1 and VIIRS C2 NOAA-20).",
+        "Partitions use temporal overlap halos (90 min) and spatial boundary buffers (5 km) to guarantee cross-boundary candidate capture.",
+        "Deterministic candidate deduplication ensures zero redundant candidate edges across partition boundaries.",
+        "Throughput is defined strictly as candidate pairs generated divided by elapsed matching seconds.",
+    ]
+    return FullScaleBenchmarksResponse(
+        benchmarks=benchmarks,
+        methodology_notes=notes,
+    )
