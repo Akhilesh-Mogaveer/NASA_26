@@ -249,8 +249,8 @@ def test_api_data_endpoints():
     assert "status" in status_data
     assert "has_processed_data" in status_data
 
-    # 2. Trigger Ingest endpoint
-    ingest_res = client.post("/api/data/ingest")
+    # 2. Trigger Ingest endpoint (capped at 100 rows for rapid unit test)
+    ingest_res = client.post("/api/data/ingest?max_rows_per_file=100")
     assert ingest_res.status_code == 200
     ingest_data = ingest_res.json()
     assert "report" in ingest_data

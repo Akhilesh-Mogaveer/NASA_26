@@ -2,9 +2,8 @@
 
 Maps sensor-specific attributes from MODIS and VIIRS into a unified,
 consistent observation schema while preserving all unedited source fields.
+Optimized for high-throughput vectorized execution across millions of records.
 """
-import uuid
-import hashlib
 from typing import Dict, Any, List, Optional
 import pandas as pd
 import numpy as np
@@ -28,23 +27,16 @@ def normalize_satellite_name(raw_sat: Any, instrument: str) -> Optional[str]:
     if instrument.upper() == "VIIRS":
         if sat_upper in ("N", "NPP", "SNPP", "SUOMI-NPP", "SUOMI NPP"):
             return "Suomi-NPP"
-        if sat_upper in ("1", "J1", "NOAA-20", "JPSS-1", "NOAA20"):
+        if sat_upper in ("1", "J1", "NOAA-20", "JPSS-1", "NOAA20", "N20"):
             return "NOAA-20"
-        if sat_upper in ("2", "J2", "NOAA-21", "JPSS-2", "NOAA21"):
+        if sat_upper in ("2", "J2", "NOAA-21", "JPSS-2", "NOAA21", "N21"):
             return "NOAA-21"
         return sat_str
 
     return sat_str
 
 
-def generate_observation_id(sensor: str, filename: str, row_idx: int, lat: Any, lon: Any, date: Any, time: Any) -> str:
-    """Generate a stable, deterministic, unique observation identifier."""
-    hash_input = f"{filename}_{row_idx}_{lat}_{lon}_{date}_{time}".encode("utf-8")
-    hash_hex = hashlib.sha1(hash_input).hexdigest()[:8].upper()
-    return f"FL-{sensor.upper()[:3]}-{hash_hex}-{row_idx:06d}"
-
-
-def normalize_dataset(df_validated: pd.DataFrame, instrument: str) -> pd.DataFrame:
+def normalize_dataset(df_validated: pd.DataFrame, instrument: str, id_offset: int = 0) -> pd.DataFrame:
     """Transform validated DataFrame into common normalized representation while preserving raw columns."""
     if df_validated.empty:
         return pd.DataFrame()
@@ -63,113 +55,64 @@ def normalize_dataset(df_validated: pd.DataFrame, instrument: str) -> pd.DataFra
     scan_col = col_map.get("scan")
     track_col = col_map.get("track")
     daynight_col = col_map.get("daynight")
-
-    # Sensor-specific brightness temperature
-    # MODIS: 'brightness' (T21/T22) and 'bright_t31'
-    # VIIRS: 'bright_ti4' (I4 band) and 'bright_ti5'
     brightness_col = col_map.get("brightness") or col_map.get("bright_ti4")
 
-    records = []
-    for idx, row in df_validated.iterrows():
-        source_file = str(row.get("_source_file", "unknown"))
+    num_rows = len(df_validated)
+    df_norm = pd.DataFrame(index=df_validated.index)
 
-        # Safe coordinate extraction
-        try:
-            lat = float(row[lat_col]) if lat_col and pd.notna(row[lat_col]) else None
-        except (ValueError, TypeError):
-            lat = None
+    # 1. Observation ID (Deterministic, unique, sequential)
+    sensor_prefix = "MOD" if instrument_clean == "MODIS" else "VII"
+    df_norm["observation_id"] = [
+        f"FL-{sensor_prefix}-{id_offset + i:08d}" for i in range(num_rows)
+    ]
 
-        try:
-            lon = float(row[lon_col]) if lon_col and pd.notna(row[lon_col]) else None
-        except (ValueError, TypeError):
-            lon = None
+    # 2. Coordinates
+    df_norm["latitude"] = pd.to_numeric(df_validated[lat_col], errors="coerce") if lat_col else None
+    df_norm["longitude"] = pd.to_numeric(df_validated[lon_col], errors="coerce") if lon_col else None
 
-        acq_date = str(row[date_col]).strip() if date_col and pd.notna(row[date_col]) else None
-        acq_time = row.get("_formatted_acq_time") or (str(row[time_col]).strip() if time_col and pd.notna(row[time_col]) else None)
-        timestamp_utc = row.get("_timestamp_utc")
+    # 3. Timestamps
+    df_norm["acquisition_date"] = df_validated[date_col].astype(str).str.strip() if date_col else None
+    df_norm["acquisition_time"] = df_validated["_formatted_acq_time"] if "_formatted_acq_time" in df_validated.columns else (
+        df_validated[time_col].astype(str) if time_col else None
+    )
+    df_norm["timestamp_utc"] = df_validated["_timestamp_utc"] if "_timestamp_utc" in df_validated.columns else None
 
-        # Canonical satellite
-        raw_sat = row.get(sat_col) if sat_col else None
-        satellite = normalize_satellite_name(raw_sat, instrument_clean)
+    # 4. Satellite & Instrument
+    if sat_col:
+        df_norm["satellite"] = df_validated[sat_col].apply(lambda s: normalize_satellite_name(s, instrument_clean))
+    else:
+        df_norm["satellite"] = None
+    df_norm["instrument"] = instrument_clean
 
-        # FRP
-        frp_val = None
-        if frp_col and pd.notna(row[frp_col]):
-            try:
-                frp_val = round(float(row[frp_col]), 2)
-            except (ValueError, TypeError):
-                frp_val = None
+    # 5. Sensor Confidence (Keep exact conventions)
+    if conf_col:
+        if instrument_clean == "MODIS":
+            df_norm["confidence"] = pd.to_numeric(df_validated[conf_col], errors="coerce")
+        else:
+            df_norm["confidence"] = df_validated[conf_col].astype(str).str.strip().str.lower()
+    else:
+        df_norm["confidence"] = None
 
-        # Confidence: preserve exact type (integer for MODIS, string for VIIRS)
-        confidence_val = None
-        if conf_col and pd.notna(row[conf_col]):
-            raw_conf = row[conf_col]
-            if instrument_clean == "MODIS":
-                try:
-                    confidence_val = int(float(raw_conf))
-                except (ValueError, TypeError):
-                    confidence_val = str(raw_conf)
-            else:
-                confidence_val = str(raw_conf).strip().lower()
+    # 6. Radiometry & Sensor Geometry
+    df_norm["frp"] = pd.to_numeric(df_validated[frp_col], errors="coerce").round(2) if frp_col else None
+    df_norm["brightness"] = pd.to_numeric(df_validated[brightness_col], errors="coerce").round(2) if brightness_col else None
+    df_norm["scan"] = pd.to_numeric(df_validated[scan_col], errors="coerce").round(2) if scan_col else None
+    df_norm["track"] = pd.to_numeric(df_validated[track_col], errors="coerce").round(2) if track_col else None
+    df_norm["daynight"] = df_validated[daynight_col].astype(str).str.strip().str.upper() if daynight_col else None
 
-        # Brightness
-        brightness_val = None
-        if brightness_col and pd.notna(row[brightness_col]):
-            try:
-                brightness_val = round(float(row[brightness_col]), 2)
-            except (ValueError, TypeError):
-                brightness_val = None
+    # 7. Metadata & Validation Flags
+    df_norm["source_file"] = df_validated["_source_file"] if "_source_file" in df_validated.columns else "unknown"
+    df_norm["processing_status"] = df_validated["_processing_status"] if "_processing_status" in df_validated.columns else "valid"
+    df_norm["is_valid"] = df_validated["_is_valid"] if "_is_valid" in df_validated.columns else True
+    df_norm["validation_errors"] = df_validated["_validation_errors"] if "_validation_errors" in df_validated.columns else ""
+    df_norm["is_duplicate"] = (
+        df_validated["_is_exact_duplicate"] | df_validated["_is_spatial_temporal_duplicate"]
+        if "_is_exact_duplicate" in df_validated.columns else False
+    )
 
-        # Scan & Track
-        scan_val = None
-        if scan_col and pd.notna(row[scan_col]):
-            try:
-                scan_val = round(float(row[scan_col]), 2)
-            except (ValueError, TypeError):
-                scan_val = None
+    # 8. Preserve all original raw columns with 'raw_' prefix
+    for orig_c in df_validated.columns:
+        if not orig_c.startswith("_"):
+            df_norm[f"raw_{orig_c}"] = df_validated[orig_c]
 
-        track_val = None
-        if track_col and pd.notna(row[track_col]):
-            try:
-                track_val = round(float(row[track_col]), 2)
-            except (ValueError, TypeError):
-                track_val = None
-
-        # Day/Night
-        daynight_val = None
-        if daynight_col and pd.notna(row[daynight_col]):
-            daynight_val = str(row[daynight_col]).strip().upper()
-
-        obs_id = generate_observation_id(instrument_clean, source_file, int(idx), lat, lon, acq_date, acq_time)
-
-        # Normalized common record
-        norm_record = {
-            "observation_id": obs_id,
-            "latitude": lat,
-            "longitude": lon,
-            "acquisition_date": acq_date,
-            "acquisition_time": acq_time,
-            "timestamp_utc": timestamp_utc,
-            "satellite": satellite,
-            "instrument": instrument_clean,
-            "confidence": confidence_val,
-            "frp": frp_val,
-            "brightness": brightness_val,
-            "scan": scan_val,
-            "track": track_val,
-            "daynight": daynight_val,
-            "source_file": source_file,
-            "processing_status": row.get("_processing_status", "valid"),
-            "is_valid": bool(row.get("_is_valid", True)),
-            "validation_errors": row.get("_validation_errors", ""),
-            "is_duplicate": bool(row.get("_is_exact_duplicate", False) or row.get("_is_spatial_temporal_duplicate", False)),
-        }
-
-        # Preserve all original raw columns with 'raw_' prefix to guarantee 100% data preservation
-        for orig_c in df_validated.columns:
-            if not orig_c.startswith("_"):
-                norm_record[f"raw_{orig_c}"] = row[orig_c]
-
-        records.append(norm_record)
-
-    return pd.DataFrame(records)
+    return df_norm

@@ -2,8 +2,8 @@
 
 Validates coordinates, acquisition dates and times, numeric ranges,
 missing values, and duplicate records without silently discarding invalid data.
+Optimized for high-throughput vectorized execution across millions of records.
 """
-import re
 import math
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Tuple, Optional
@@ -39,10 +39,7 @@ class ValidationSummary:
 
 
 def format_acq_time(raw_time: Any) -> Tuple[Optional[str], Optional[int], Optional[int]]:
-    """Format raw FIRMS acquisition time (e.g. '345', '0345', '1420', '14:20') to HH:MM string.
-    
-    Returns (formatted_time_str, hour, minute) or (None, None, None) on error.
-    """
+    """Format raw FIRMS acquisition time (e.g. '345', '0345', '1420', '14:20') to HH:MM string."""
     if raw_time is None or pd.isna(raw_time):
         return None, None, None
 
@@ -50,11 +47,9 @@ def format_acq_time(raw_time: Any) -> Tuple[Optional[str], Optional[int], Option
     if not time_str or time_str.lower() in ("nan", "none", "null"):
         return None, None, None
 
-    # Strip decimal points if read as float e.g. '345.0' -> '345'
     if "." in time_str:
         time_str = time_str.split(".")[0].strip()
 
-    # If already formatted with colon (HH:MM)
     if ":" in time_str:
         parts = time_str.split(":")
         if len(parts) >= 2 and parts[0].isdigit() and parts[1].isdigit():
@@ -64,7 +59,6 @@ def format_acq_time(raw_time: Any) -> Tuple[Optional[str], Optional[int], Option
                 return f"{hour:02d}:{minute:02d}", hour, minute
         return None, None, None
 
-    # Handle 1-4 digit numeric strings (e.g. 5 -> 0005, 345 -> 0345, 1420 -> 1420)
     if time_str.isdigit():
         if len(time_str) > 4:
             return None, None, None
@@ -78,15 +72,11 @@ def format_acq_time(raw_time: Any) -> Tuple[Optional[str], Optional[int], Option
 
 
 def parse_utc_timestamp(date_str: Any, time_str: Any) -> Tuple[Optional[str], Optional[str]]:
-    """Combine date and time into UTC ISO-8601 string.
-    
-    Returns (iso_timestamp, error_message).
-    """
+    """Combine date and time into UTC ISO-8601 string."""
     if date_str is None or pd.isna(date_str):
         return None, "Missing acquisition date"
 
     date_clean = str(date_str).strip()
-    # Try standard YYYY-MM-DD
     parsed_date = None
     for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y%m%d", "%d-%m-%Y"):
         try:
@@ -129,120 +119,139 @@ def validate_records(df: pd.DataFrame, instrument: str) -> Tuple[pd.DataFrame, V
     time_col = col_map.get("acq_time")
     frp_col = col_map.get("frp")
 
-    # Track missing values across all source columns
+    # 1. Track missing values across all source columns
     for col in df.columns:
         if not col.startswith("_"):
             missing_count = int(df[col].isna().sum())
             if missing_count > 0:
                 summary.missing_values_by_field[col] = missing_count
 
-    # Check for exact duplicate rows (ignoring internal underscore columns)
+    # 2. Duplicate Detection
     source_cols = [c for c in df.columns if not c.startswith("_")]
     exact_dup_mask = df.duplicated(subset=source_cols, keep="first")
     summary.exact_duplicate_count = int(exact_dup_mask.sum())
 
-    # Check for spatial-temporal duplicate observations
-    st_dup_mask = pd.Series(False, index=df.index)
     if lat_col and lon_col and date_col and time_col:
         st_dup_mask = df.duplicated(subset=[lat_col, lon_col, date_col, time_col], keep="first")
         summary.spatial_temporal_duplicate_count = int(st_dup_mask.sum())
+    else:
+        st_dup_mask = pd.Series(False, index=df.index)
 
-    is_valid_list = []
-    error_list = []
-    timestamp_utc_list = []
-    acq_time_clean_list = []
+    # 3. Vectorized Coordinate Validation
+    lat_series = pd.to_numeric(df[lat_col], errors="coerce") if lat_col else pd.Series(np.nan, index=df.index)
+    lon_series = pd.to_numeric(df[lon_col], errors="coerce") if lon_col else pd.Series(np.nan, index=df.index)
 
-    for idx, row in df.iterrows():
+    valid_lat = lat_series.notna() & (lat_series >= -90.0) & (lat_series <= 90.0)
+    valid_lon = lon_series.notna() & (lon_series >= -180.0) & (lon_series <= 180.0)
+    coord_valid = valid_lat & valid_lon
+    invalid_coord_mask = ~coord_valid
+    summary.invalid_coordinate_count = int(invalid_coord_mask.sum())
+
+    # 4. Vectorized Time Validation & Formatting
+    if time_col:
+        raw_time_str = df[time_col].astype(str).str.split(".").str[0].str.strip()
+        time_is_digit = raw_time_str.str.isdigit()
+        time_len_ok = raw_time_str.str.len() <= 4
+        padded_time = raw_time_str.str.zfill(4)
+        
+        hours = pd.to_numeric(padded_time.str[:2], errors="coerce")
+        minutes = pd.to_numeric(padded_time.str[2:4], errors="coerce")
+        
+        valid_time_digits = time_is_digit & time_len_ok & (hours >= 0) & (hours <= 23) & (minutes >= 0) & (minutes <= 59)
+        colon_mask = raw_time_str.str.contains(":")
+        valid_time = valid_time_digits | colon_mask
+        
+        formatted_time = np.where(
+            valid_time_digits,
+            padded_time.str[:2] + ":" + padded_time.str[2:4],
+            raw_time_str
+        )
+    else:
+        valid_time = pd.Series(False, index=df.index)
+        formatted_time = pd.Series("", index=df.index)
+
+    if date_col:
+        raw_date_str = df[date_col].astype(str).str.strip()
+        valid_date = raw_date_str.str.match(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$") | raw_date_str.str.match(r"^\d{1,2}[-/]\d{1,2}[-/]\d{4}$")
+    else:
+        valid_date = pd.Series(False, index=df.index)
+
+    timestamp_valid = valid_time & valid_date
+    invalid_time_mask = ~timestamp_valid
+    summary.timestamp_errors = int(invalid_time_mask.sum())
+
+    iso_timestamps = np.where(
+        timestamp_valid,
+        raw_date_str + "T" + pd.Series(formatted_time, index=df.index) + ":00Z",
+        None
+    )
+
+    # 5. Numeric Range Validation (FRP >= 0)
+    if frp_col:
+        frp_series = pd.to_numeric(df[frp_col], errors="coerce")
+        valid_frp = df[frp_col].isna() | (frp_series.notna() & (frp_series >= 0.0))
+    else:
+        valid_frp = pd.Series(True, index=df.index)
+
+    any_dup_mask = exact_dup_mask | st_dup_mask
+
+    is_valid_mask = coord_valid & timestamp_valid & valid_frp & (~any_dup_mask)
+    summary.valid_records = int(is_valid_mask.sum())
+    summary.invalid_records = int((~is_valid_mask).sum())
+
+    # 6. Detailed Error Construction for Invalid Rows
+    error_list = [""] * len(df)
+    invalid_indices = df.index[~is_valid_mask].tolist()
+
+    for idx in invalid_indices:
         errors = []
-        is_coord_error = False
-        is_time_error = False
+        loc = df.index.get_loc(idx)
+        if not valid_lat.iloc[loc]:
+            val = df.iloc[loc][lat_col] if lat_col else "Missing"
+            if pd.isna(val) or val == "Missing":
+                errors.append("Latitude is missing")
+            else:
+                errors.append(f"Latitude out of bounds [-90, +90]: {val}")
 
-        # 1. Coordinate Validation
-        raw_lat = row.get(lat_col) if lat_col else None
-        raw_lon = row.get(lon_col) if lon_col else None
+        if not valid_lon.iloc[loc]:
+            val = df.iloc[loc][lon_col] if lon_col else "Missing"
+            if pd.isna(val) or val == "Missing":
+                errors.append("Longitude is missing")
+            else:
+                errors.append(f"Longitude out of bounds [-180, +180]: {val}")
 
-        if raw_lat is None or pd.isna(raw_lat):
-            errors.append("Latitude is missing")
-            is_coord_error = True
-        else:
-            try:
-                lat_val = float(raw_lat)
-                if math.isnan(lat_val) or lat_val < -90.0 or lat_val > 90.0:
-                    errors.append(f"Latitude out of bounds [-90, +90]: {lat_val}")
-                    is_coord_error = True
-            except (ValueError, TypeError):
-                errors.append(f"Latitude non-numeric: '{raw_lat}'")
-                is_coord_error = True
+        if not valid_date.iloc[loc]:
+            val = df.iloc[loc][date_col] if date_col else "Missing"
+            errors.append(f"Invalid date format: '{val}'")
 
-        if raw_lon is None or pd.isna(raw_lon):
-            errors.append("Longitude is missing")
-            is_coord_error = True
-        else:
-            try:
-                lon_val = float(raw_lon)
-                if math.isnan(lon_val) or lon_val < -180.0 or lon_val > 180.0:
-                    errors.append(f"Longitude out of bounds [-180, +180]: {lon_val}")
-                    is_coord_error = True
-            except (ValueError, TypeError):
-                errors.append(f"Longitude non-numeric: '{raw_lon}'")
-                is_coord_error = True
+        if not valid_time.iloc[loc]:
+            val = df.iloc[loc][time_col] if time_col else "Missing"
+            errors.append(f"Invalid acquisition time: '{val}'")
 
-        if is_coord_error:
-            summary.invalid_coordinate_count += 1
+        if not valid_frp.iloc[loc]:
+            val = df.iloc[loc][frp_col] if frp_col else "Unknown"
+            errors.append(f"FRP cannot be negative: {val}")
 
-        # 2. Timestamp Validation
-        raw_date = row.get(date_col) if date_col else None
-        raw_time = row.get(time_col) if time_col else None
-        formatted_time, _, _ = format_acq_time(raw_time)
-        acq_time_clean_list.append(formatted_time or str(raw_time) if raw_time is not None else "")
-
-        iso_ts, time_err = parse_utc_timestamp(raw_date, raw_time)
-        if time_err:
-            errors.append(time_err)
-            is_time_error = True
-            summary.timestamp_errors += 1
-            timestamp_utc_list.append(None)
-        else:
-            timestamp_utc_list.append(iso_ts)
-
-        # 3. Numeric checks (e.g. FRP, Scan, Track)
-        if frp_col and row.get(frp_col) is not None and not pd.isna(row.get(frp_col)):
-            try:
-                frp_val = float(row.get(frp_col))
-                if not math.isnan(frp_val) and frp_val < 0.0:
-                    errors.append(f"FRP cannot be negative: {frp_val}")
-            except (ValueError, TypeError):
-                errors.append(f"FRP non-numeric: '{row.get(frp_col)}'")
-
-        # 4. Duplicate annotation
-        is_dup = bool(exact_dup_mask.loc[idx] or st_dup_mask.loc[idx])
-        if is_dup:
+        if any_dup_mask.iloc[loc]:
             errors.append("Potential duplicate observation")
 
-        # Compile record validity
-        row_is_valid = len(errors) == 0
-        if row_is_valid:
-            summary.valid_records += 1
-        else:
-            summary.invalid_records += 1
-            if len(summary.validation_errors_sample) < 15:
-                summary.validation_errors_sample.append({
-                    "row_index": int(idx),
-                    "source_file": str(row.get("_source_file", "unknown")),
-                    "errors": errors,
-                })
+        err_str = "; ".join(errors)
+        error_list[loc] = err_str
 
-        is_valid_list.append(row_is_valid)
-        error_list.append("; ".join(errors) if errors else "")
+        if len(summary.validation_errors_sample) < 15:
+            summary.validation_errors_sample.append({
+                "row_index": int(idx),
+                "source_file": str(df.iloc[loc].get("_source_file", "unknown")),
+                "errors": errors,
+            })
 
-    # Attach validation fields to DataFrame
     df_validated = df.copy()
-    df_validated["_is_valid"] = is_valid_list
+    df_validated["_is_valid"] = is_valid_mask
     df_validated["_validation_errors"] = error_list
-    df_validated["_processing_status"] = np.where(df_validated["_is_valid"], "valid", "invalid")
+    df_validated["_processing_status"] = np.where(is_valid_mask, "valid", "invalid")
     df_validated["_is_exact_duplicate"] = exact_dup_mask
     df_validated["_is_spatial_temporal_duplicate"] = st_dup_mask
-    df_validated["_timestamp_utc"] = timestamp_utc_list
-    df_validated["_formatted_acq_time"] = acq_time_clean_list
+    df_validated["_timestamp_utc"] = iso_timestamps
+    df_validated["_formatted_acq_time"] = formatted_time
 
     return df_validated, summary

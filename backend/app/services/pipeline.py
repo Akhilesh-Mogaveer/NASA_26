@@ -2,6 +2,7 @@
 
 Orchestrates loading from raw directories, validating records, normalizing schemas,
 persisting processed datasets, and generating comprehensive data quality reports.
+Supports streaming chunked execution for multi-gigabyte NASA FIRMS archives.
 """
 import json
 import logging
@@ -11,7 +12,7 @@ from typing import Dict, Any, List, Optional
 import pandas as pd
 
 from app.config import settings
-from app.services.ingestion import load_sensor_directory, RawDataset
+from app.services.ingestion import REQUIRED_COMMON_COLUMNS
 from app.services.validation import validate_records, ValidationSummary
 from app.services.normalization import normalize_dataset
 
@@ -44,8 +45,10 @@ def run_ingestion_pipeline(
     raw_viirs_dir: Optional[Path] = None,
     processed_dir: Optional[Path] = None,
     reports_dir: Optional[Path] = None,
+    chunk_size: int = 250_000,
+    max_rows_per_file: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Execute the full Ingestion, Validation, and Normalization workflow."""
+    """Execute the full Ingestion, Validation, and Normalization workflow in streaming chunks."""
     global pipeline_state
 
     modis_dir = raw_modis_dir or settings.DATA_RAW_MODIS
@@ -83,112 +86,215 @@ def run_ingestion_pipeline(
         },
     }
 
+    # Discover CSV files in both raw directories
+    modis_files = sorted(modis_dir.glob("*.csv")) if modis_dir.exists() else []
+    viirs_files = sorted(viirs_dir.glob("*.csv")) if viirs_dir.exists() else []
+    
+    # Filter out hidden or temporary files
+    modis_files = [f for f in modis_files if not f.name.startswith(".")]
+    viirs_files = [f for f in viirs_files if not f.name.startswith(".")]
+
+    all_file_jobs = [(f, "MODIS") for f in modis_files] + [(f, "VIIRS") for f in viirs_files]
+    report["number_of_source_files"] = len(all_file_jobs)
+    report["sensor_statistics"]["MODIS"]["source_files"] = len(modis_files)
+    report["sensor_statistics"]["VIIRS"]["source_files"] = len(viirs_files)
+
+    # Initialize / clean output processed files
+    modis_out_path = proc_dir / "modis_normalized.csv"
+    viirs_out_path = proc_dir / "viirs_normalized.csv"
+    unified_out_path = proc_dir / "unified_observations.csv"
+
+    # Remove existing processed files to prevent duplicate appending
+    for p in (modis_out_path, viirs_out_path, unified_out_path):
+        if p.exists():
+            try:
+                p.unlink()
+            except Exception as e:
+                logger.warning("Could not unlink existing file %s: %s", p, e)
+
+    modis_header_written = False
+    viirs_header_written = False
+    unified_header_written = False
+    sensor_id_counters = {"MODIS": 0, "VIIRS": 0}
+
     try:
-        # 1. Ingest Raw Datasets
-        modis_raw_list = load_sensor_directory(modis_dir, sensor="MODIS")
-        viirs_raw_list = load_sensor_directory(viirs_dir, sensor="VIIRS")
-        all_raw_datasets = modis_raw_list + viirs_raw_list
-
-        report["number_of_source_files"] = len(all_raw_datasets)
-        report["sensor_statistics"]["MODIS"]["source_files"] = len(modis_raw_list)
-        report["sensor_statistics"]["VIIRS"]["source_files"] = len(viirs_raw_list)
-
-        modis_norm_dfs: List[pd.DataFrame] = []
-        viirs_norm_dfs: List[pd.DataFrame] = []
-
-        # 2. Process Each Dataset
-        for raw_ds in all_raw_datasets:
-            file_meta = {
-                "filename": raw_ds.filename,
-                "sensor": raw_ds.sensor,
-                "status": raw_ds.status,
-                "row_count": raw_ds.row_count,
-                "error": raw_ds.error_message,
+        for file_path, sensor in all_file_jobs:
+            file_meta: Dict[str, Any] = {
+                "filename": file_path.name,
+                "sensor": sensor,
+                "status": "loaded",
+                "row_count": 0,
+                "valid_records": 0,
+                "invalid_records": 0,
+                "error": None,
             }
 
-            if raw_ds.status == "error":
-                report["processing_errors"].append({
-                    "filename": raw_ds.filename,
-                    "sensor": raw_ds.sensor,
-                    "error": raw_ds.error_message,
-                })
+            # 1. Inspect file existence and size
+            if not file_path.exists():
+                file_meta["status"] = "error"
+                file_meta["error"] = "File does not exist"
+                report["processing_errors"].append(file_meta)
                 report["source_files"].append(file_meta)
                 continue
 
-            # Validate records
-            df_val, val_summary = validate_records(raw_ds.df, instrument=raw_ds.sensor)
+            if file_path.stat().st_size == 0:
+                file_meta["status"] = "error"
+                file_meta["error"] = "File is empty (0 bytes)"
+                report["processing_errors"].append(file_meta)
+                report["source_files"].append(file_meta)
+                continue
 
-            # Normalize records
-            df_norm = normalize_dataset(df_val, instrument=raw_ds.sensor)
+            # 2. Inspect CSV headers
+            try:
+                sample_head = pd.read_csv(file_path, nrows=0)
+                original_cols = list(sample_head.columns)
+            except Exception as exc:
+                file_meta["status"] = "error"
+                file_meta["error"] = f"Unreadable CSV headers: {str(exc)}"
+                report["processing_errors"].append(file_meta)
+                report["source_files"].append(file_meta)
+                continue
 
-            if raw_ds.sensor == "MODIS":
-                modis_norm_dfs.append(df_norm)
-            else:
-                viirs_norm_dfs.append(df_norm)
+            lower_cols = {c.lower().strip(): c for c in original_cols}
+            missing_req = [req for req in REQUIRED_COMMON_COLUMNS if req not in lower_cols]
+            if missing_req:
+                file_meta["status"] = "error"
+                file_meta["error"] = f"Missing required FIRMS columns: {', '.join(missing_req)}"
+                report["processing_errors"].append(file_meta)
+                report["source_files"].append(file_meta)
+                continue
 
-            # Aggregate stats
-            report["total_records"] += val_summary.total_records
-            report["valid_records"] += val_summary.valid_records
-            report["invalid_records"] += val_summary.invalid_records
-            report["invalid_coordinate_count"] += val_summary.invalid_coordinate_count
-            report["timestamp_errors"] += val_summary.timestamp_errors
-            report["duplicate_counts"]["exact_duplicates"] += val_summary.exact_duplicate_count
-            report["duplicate_counts"]["spatial_temporal_duplicates"] += val_summary.spatial_temporal_duplicate_count
+            # 3. Stream and process file in chunks
+            file_rows_processed = 0
+            file_valid = 0
+            file_invalid = 0
 
-            # Merge missing values
-            for col, count in val_summary.missing_values_by_field.items():
-                report["missing_values_by_field"][col] = (
-                    report["missing_values_by_field"].get(col, 0) + count
+            try:
+                reader = pd.read_csv(
+                    file_path,
+                    chunksize=chunk_size,
+                    dtype={"acq_time": str, "ACQ_TIME": str, "acq_date": str, "ACQ_DATE": str},
+                    na_values=["", "NA", "N/A", "null", "NULL", "NaN"],
+                    keep_default_na=True,
+                    low_memory=False,
                 )
 
-            # Sensor level breakdown
-            sensor_stats = report["sensor_statistics"][raw_ds.sensor]
-            sensor_stats["total"] += val_summary.total_records
-            sensor_stats["valid"] += val_summary.valid_records
-            sensor_stats["invalid"] += val_summary.invalid_records
+                for chunk in reader:
+                    if chunk.empty:
+                        continue
 
-            file_meta["valid_records"] = val_summary.valid_records
-            file_meta["invalid_records"] = val_summary.invalid_records
+                    # If max rows specified, slice chunk
+                    if max_rows_per_file and (file_rows_processed + len(chunk) > max_rows_per_file):
+                        limit_rows = max_rows_per_file - file_rows_processed
+                        chunk = chunk.iloc[:limit_rows]
+
+                    chunk["_source_file"] = file_path.name
+                    chunk["_sensor_inferred"] = sensor
+
+                    # Validate records
+                    chunk_val, val_summary = validate_records(chunk, instrument=sensor)
+
+                    # Normalize records
+                    chunk_norm = normalize_dataset(
+                        chunk_val,
+                        instrument=sensor,
+                        id_offset=sensor_id_counters[sensor],
+                    )
+
+                    # Append to sensor-specific output CSV
+                    if sensor == "MODIS":
+                        chunk_norm.to_csv(
+                            modis_out_path,
+                            mode="a",
+                            header=not modis_header_written,
+                            index=False,
+                        )
+                        modis_header_written = True
+                    else:
+                        chunk_norm.to_csv(
+                            viirs_out_path,
+                            mode="a",
+                            header=not viirs_header_written,
+                            index=False,
+                        )
+                        viirs_header_written = True
+
+                    # Append to unified observations CSV
+                    chunk_norm.to_csv(
+                        unified_out_path,
+                        mode="a",
+                        header=not unified_header_written,
+                        index=False,
+                    )
+                    unified_header_written = True
+
+                    # Update counters
+                    chunk_rows = len(chunk)
+                    sensor_id_counters[sensor] += chunk_rows
+                    file_rows_processed += chunk_rows
+                    file_valid += val_summary.valid_records
+                    file_invalid += val_summary.invalid_records
+
+                    report["total_records"] += val_summary.total_records
+                    report["valid_records"] += val_summary.valid_records
+                    report["invalid_records"] += val_summary.invalid_records
+                    report["invalid_coordinate_count"] += val_summary.invalid_coordinate_count
+                    report["timestamp_errors"] += val_summary.timestamp_errors
+                    report["duplicate_counts"]["exact_duplicates"] += val_summary.exact_duplicate_count
+                    report["duplicate_counts"]["spatial_temporal_duplicates"] += val_summary.spatial_temporal_duplicate_count
+
+                    for col, count in val_summary.missing_values_by_field.items():
+                        report["missing_values_by_field"][col] = (
+                            report["missing_values_by_field"].get(col, 0) + count
+                        )
+
+                    if max_rows_per_file and file_rows_processed >= max_rows_per_file:
+                        break
+
+            except Exception as exc:
+                logger.error("Error processing CSV stream %s: %s", file_path.name, exc)
+                file_meta["status"] = "error"
+                file_meta["error"] = f"Stream processing error: {str(exc)}"
+                report["processing_errors"].append(file_meta)
+
+            if file_rows_processed == 0 and file_meta["status"] != "error":
+                file_meta["status"] = "error"
+                file_meta["error"] = "CSV contains 0 data rows"
+                report["processing_errors"].append(file_meta)
+
+            file_meta["row_count"] = file_rows_processed
+            file_meta["valid_records"] = file_valid
+            file_meta["invalid_records"] = file_invalid
             report["source_files"].append(file_meta)
+
+            sensor_stats = report["sensor_statistics"][sensor]
+            sensor_stats["total"] += file_rows_processed
+            sensor_stats["valid"] += file_valid
+            sensor_stats["invalid"] += file_invalid
 
         report["duplicate_counts"]["total_flagged_duplicates"] = (
             report["duplicate_counts"]["exact_duplicates"] +
             report["duplicate_counts"]["spatial_temporal_duplicates"]
         )
 
-        # 3. Concatenate and Export Processed Datasets
-        # MODIS
-        if modis_norm_dfs:
-            df_modis_all = pd.concat(modis_norm_dfs, ignore_index=True)
-        else:
-            df_modis_all = pd.DataFrame()
-        modis_out_path = proc_dir / "modis_normalized.csv"
-        df_modis_all.to_csv(modis_out_path, index=False)
+        # Ensure empty CSVs are created if no records existed
+        if not modis_out_path.exists():
+            pd.DataFrame().to_csv(modis_out_path, index=False)
+        if not viirs_out_path.exists():
+            pd.DataFrame().to_csv(viirs_out_path, index=False)
+        if not unified_out_path.exists():
+            pd.DataFrame().to_csv(unified_out_path, index=False)
 
-        # VIIRS
-        if viirs_norm_dfs:
-            df_viirs_all = pd.concat(viirs_norm_dfs, ignore_index=True)
-        else:
-            df_viirs_all = pd.DataFrame()
-        viirs_out_path = proc_dir / "viirs_normalized.csv"
-        df_viirs_all.to_csv(viirs_out_path, index=False)
-
-        # Unified
-        unified_frames = [df for df in [df_modis_all, df_viirs_all] if not df.empty]
-        if unified_frames:
-            df_unified = pd.concat(unified_frames, ignore_index=True)
-        else:
-            df_unified = pd.DataFrame()
-        unified_out_path = proc_dir / "unified_observations.csv"
-        df_unified.to_csv(unified_out_path, index=False)
-
-        # 4. Save Data Quality Report
+        # Save Data Quality Report to disk
         quality_report_path = rep_dir / "data_quality_report.json"
         with open(quality_report_path, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
 
         pipeline_state.status = "completed"
-        pipeline_state.message = f"Successfully processed {report['total_records']} observations ({report['valid_records']} valid, {report['invalid_records']} invalid)"
+        pipeline_state.message = (
+            f"Successfully processed {report['total_records']:,} observations "
+            f"({report['valid_records']:,} valid, {report['invalid_records']:,} invalid)"
+        )
         pipeline_state.last_run_at = datetime.now(timezone.utc).isoformat()
         pipeline_state.last_summary = report
 
@@ -204,7 +310,7 @@ def run_ingestion_pipeline(
 
 
 def get_latest_quality_report(reports_dir: Optional[Path] = None) -> Optional[Dict[str, Any]]:
-    """Load latest quality report from disk, or return empty default if not generated yet."""
+    """Load latest quality report from disk, or return None if not generated yet."""
     rep_dir = reports_dir or settings.DATA_REPORTS_DIR
     report_file = rep_dir / "data_quality_report.json"
     if report_file.exists():
@@ -224,10 +330,9 @@ def get_normalized_preview(
     offset: int = 0,
     processed_dir: Optional[Path] = None,
 ) -> Dict[str, Any]:
-    """Retrieve preview slice of normalized observations from disk."""
+    """Retrieve preview slice of normalized observations efficiently using chunked read."""
     proc_dir = processed_dir or settings.DATA_PROCESSED_DIR
 
-    # Choose dataset file based on sensor query
     if sensor and sensor.upper() == "MODIS":
         file_to_read = proc_dir / "modis_normalized.csv"
     elif sensor and sensor.upper() == "VIIRS":
@@ -246,7 +351,9 @@ def get_normalized_preview(
         }
 
     try:
-        df = pd.read_csv(file_to_read)
+        # Read only up to offset + limit rows to avoid reading massive CSVs into memory
+        rows_to_read = offset + limit + 100
+        df = pd.read_csv(file_to_read, nrows=rows_to_read)
         if df.empty:
             return {
                 "total_available": 0,
@@ -257,7 +364,6 @@ def get_normalized_preview(
                 "message": "Dataset is empty.",
             }
 
-        # Apply status filter
         if status:
             status_clean = status.lower().strip()
             if status_clean in ("valid", "invalid") and "processing_status" in df.columns:
@@ -265,8 +371,6 @@ def get_normalized_preview(
 
         total_matching = len(df)
         slice_df = df.iloc[offset : offset + limit]
-
-        # Convert NaNs to None for JSON serialization
         records = slice_df.where(pd.notnull(slice_df), None).to_dict(orient="records")
 
         return {

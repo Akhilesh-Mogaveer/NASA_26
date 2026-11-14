@@ -23,9 +23,11 @@ router = APIRouter(prefix="/data", tags=["Data Ingestion & Validation"])
 
 
 @router.post("/ingest", response_model=DataIngestResponse, summary="Trigger Ingestion and Validation")
-async def trigger_ingestion() -> DataIngestResponse:
+async def trigger_ingestion(
+    max_rows_per_file: Optional[int] = Query(None, description="Max rows per file (None for full dataset)"),
+) -> DataIngestResponse:
     """Run data ingestion, coordinate/timestamp validation, and normalization for raw MODIS & VIIRS files."""
-    report = run_ingestion_pipeline()
+    report = run_ingestion_pipeline(max_rows_per_file=max_rows_per_file)
 
     return DataIngestResponse(
         status=pipeline_state.status,
