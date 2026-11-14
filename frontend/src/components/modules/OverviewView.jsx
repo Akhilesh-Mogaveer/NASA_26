@@ -72,6 +72,13 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <button
+              onClick={() => setActiveTab('matching')}
+              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-accent-blue hover:bg-sky-500 text-white text-xs font-semibold shadow-md shadow-accent-blue/25 transition-all"
+            >
+              <span>Spatial-Temporal Matching</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+            <button
               onClick={() => setActiveTab('map')}
               className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-modis hover:bg-modis-dark text-white text-xs font-semibold shadow-md shadow-modis/25 transition-all"
             >

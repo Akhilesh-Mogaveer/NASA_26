@@ -206,3 +206,149 @@ class SensorComparisonDetailedResponse(BaseModel):
     scientific_reasons_for_divergence: List[str]
 
 
+# ==========================================
+# Phase 4 Matching Engine Schemas
+# ==========================================
+
+class MatchingRunRequest(BaseModel):
+    """Request parameters for running spatial-temporal matching."""
+    spatial_radius_km: float = Field(default=2.0, ge=0.1, le=20.0, description="Spatial search radius in kilometers (e.g. 1.25, 2.0, 3.5)")
+    temporal_window_minutes: float = Field(default=60.0, ge=1.0, le=360.0, description="Temporal window in minutes (e.g. 15, 30, 60, 90)")
+    weight_spatial: float = Field(default=0.5, ge=0.0, le=1.0, description="Proximity weight for spatial distance")
+    weight_temporal: float = Field(default=0.5, ge=0.0, le=1.0, description="Proximity weight for temporal difference")
+    region: Optional[str] = Field(default=None, description="Predefined region code or custom bounds")
+    min_lat: Optional[float] = None
+    max_lat: Optional[float] = None
+    min_lon: Optional[float] = None
+    max_lon: Optional[float] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    max_records: Optional[int] = Field(default=50000, le=200000)
+
+
+class MatchingStatusResponse(BaseModel):
+    """Status of spatial-temporal matching engine artifacts."""
+    status: str
+    message: Optional[str] = None
+    generated_at: Optional[str] = None
+    artifacts_available: bool
+    total_associations: Optional[int] = 0
+    unique_modis_matched: Optional[int] = 0
+    unique_viirs_matched: Optional[int] = 0
+    spatial_radius_km: Optional[float] = 2.0
+    temporal_window_minutes: Optional[float] = 60.0
+
+
+class MatchingSummaryResponse(BaseModel):
+    """Top-level summary of matching engine results."""
+    generated_at: str
+    status: str
+    parameters: Dict[str, Any]
+    input_counts: Dict[str, Any]
+    matching_results: Dict[str, Any]
+    multiplicity_breakdown: Dict[str, int]
+    classification_breakdown: Dict[str, int]
+    statistics: Dict[str, Any]
+    benchmarks: Dict[str, Any]
+    experiment_metadata: Optional[Dict[str, Any]] = None
+
+
+class AssociationItem(BaseModel):
+    """Individual candidate association item."""
+    association_id: str
+    modis_observation_id: str
+    viirs_observation_id: str
+    modis_timestamp_utc: Union[str, Any]
+    viirs_timestamp_utc: Union[str, Any]
+    distance_km: float
+    time_diff_minutes: float
+    spatial_score: float
+    temporal_score: float
+    heuristic_score: float
+    candidate_rank: int
+    classification: str
+    multiplicity_type: str
+    modis_frp: float
+    viirs_frp: float
+    modis_latitude: float
+    modis_longitude: float
+    viirs_latitude: float
+    viirs_longitude: float
+    modis_satellite: str
+    viirs_satellite: str
+    spatial_radius_km: float
+    temporal_window_minutes: float
+    processed_at: Union[str, Any]
+
+
+class AssociationsPageResponse(BaseModel):
+    """Paginated response of candidate associations."""
+    total_count: int
+    limit: int
+    offset: int
+    items: List[AssociationItem]
+
+
+class UnmatchedItem(BaseModel):
+    """Individual unmatched observation item."""
+    observation_id: str
+    latitude: float
+    longitude: float
+    timestamp_utc: Union[str, Any]
+    frp: float
+    satellite: str
+    instrument: str
+    unmatched_instrument: Optional[str] = None
+
+
+class UnmatchedPageResponse(BaseModel):
+    """Paginated response of unmatched observations."""
+    total_count: int
+    limit: int
+    offset: int
+    items: List[UnmatchedItem]
+
+
+class SensitivityParameterRow(BaseModel):
+    """Sensitivity evaluation row for one parameter combination."""
+    spatial_radius_km: float
+    temporal_window_minutes: float
+    total_modis_considered: int
+    total_viirs_considered: int
+    candidate_association_count: int
+    unique_modis_matched: int
+    unique_viirs_matched: int
+    unmatched_modis_count: int
+    unmatched_viirs_count: int
+    modis_match_rate_pct: float
+    viirs_match_rate_pct: float
+    ambiguous_modis_count: int
+    ambiguous_viirs_count: int
+    modis_ambiguity_pct: float
+    viirs_ambiguity_pct: float
+    one_to_one_count: int
+    one_to_many_count: int
+    many_to_one_count: int
+    many_to_many_count: int
+    strong_proximity_count: int
+    candidate_association_count_only: int
+    ambiguous_association_count: int
+    mean_distance_km: float
+    median_distance_km: float
+    mean_time_diff_min: float
+    median_time_diff_min: float
+    candidates_per_matched_modis: float
+    candidates_per_matched_viirs: float
+    mean_heuristic_score: float
+
+
+class MatchingEvaluationResponse(BaseModel):
+    """Sensitivity evaluation matrix across all 12 parameter combinations."""
+    total_combinations: int
+    spatial_radii_km: List[float]
+    temporal_windows_minutes: List[float]
+    matrix: List[SensitivityParameterRow]
+    scientific_interpretation: str
+
+
+

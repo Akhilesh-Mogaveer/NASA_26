@@ -335,7 +335,65 @@ The backend provides sub-millisecond, memory-cached analytics endpoints:
 
 ---
 
-## 11. Scientific Considerations
+## 11. Phase 4: Spatial-Temporal Matching Engine & Sensitivity Analysis
+
+Phase 4 implements the complete spatial-temporal association engine, multiplicity resolver, and 12-parameter sensitivity evaluator.
+
+### 11.1 Matching Methodology & Geodesic Calculation
+- **Exact Geodesic Calculation:** Employs the Haversine formula with antimeridian ($\pm 180^\circ$) wrap-around adjustment and cosine latitude area convergence.
+- **Scalable Indexing:** Filters candidate observations via UTC epoch window slicing, then builds a local `BallTree` (Haversine metric) on candidate VIIRS points for $O(\log K)$ radius queries.
+- **Empirical Proximity Scoring:** Combines spatial and temporal proximity into a normalized ranking metric ($0.5 \cdot \text{spatial\_score} + 0.5 \cdot \text{temporal\_score}$), explicitly documented as an empirical ranking score rather than a calibrated probability.
+- **Multiplicity & Ambiguity Architecture:** Classifies associations into 1:1 direct pairs, 1:N sub-pixel splits (1km MODIS pixel covering multiple 375m VIIRS detections), N:1 scan-edge overlaps, and M:N complex multi-pixel wildfire perimeters. Associations with competing candidate scores within $\Delta \text{score} \le 0.15$ are flagged as `ambiguous_association`.
+
+### 11.2 Real-Data Experiment & Benchmarks
+Executed on authentic NASA FIRMS observations:
+- **Primary Benchmark Region:** North American Boreal Forest Wildfire Complex (Saskatchewan / Manitoba, Canada: Lat 54.0°–58.0°N, Lon 106.0°–102.0°W, August 1–2, 2025; **22,455 valid observations**: 3,116 MODIS and 19,339 VIIRS).
+  - **Baseline Results ($R \le 2.0\text{ km}, \Delta t \le 60\text{ min}$):**
+    - **Total Candidate Associations:** 28,911
+    - **Unique MODIS Matched:** 1,470 / 3,116 (47.18%)
+    - **Unique VIIRS Matched:** 8,328 / 19,339 (43.06%)
+    - **Unmatched Observations:** 1,646 MODIS, 11,011 VIIRS
+    - **Multiplicity Breakdown:** 1:1 = 15; 1:N = 2,104; N:1 = 24; M:N = 26,768
+    - **Mean Geodesic Separation:** 1.202 km (Median: 1.24 km)
+    - **Mean Temporal Difference:** 21.82 min (Median: 10.0 min)
+    - **Throughput:** 137.8 candidate associations/sec (Peak traced memory: 168.4 MB)
+- **Secondary Comparative Region:** Southern African Miombo Savanna Fire Belt (Zambia / Angola: Lat -15.0° to -12.0°, Lon 22.0° to 26.0°, August 1–2, 2025; 4,599 valid observations). Yielded 16 associations (MODIS match rate: 0.73%), demonstrating that in tropical fast-moving grass fire regimes, 3-hour diurnal pass separation between Terra and Aqua limits co-incident snapshot matching compared to slow-burning boreal forest wildfires.
+
+### 11.3 Sensitivity Analysis Matrix (All 12 Parameter Combinations)
+
+| Radius | Window | Candidate Associations | Matched MODIS | Matched VIIRS | MODIS Ambiguity % | Mean Distance | Mean $\Delta t$ | Candidates / MODIS |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1.25 km** | 15 min | 7,301 | 620 (19.90%) | 3,143 (16.25%) | 89.68% | 0.793 km | 7.95 min | 11.78 |
+| **1.25 km** | 30 min | 10,704 | 1,050 (33.70%) | 4,723 (24.42%) | 88.38% | 0.791 km | 14.58 min | 10.19 |
+| **1.25 km** | 60 min | 14,665 | 1,427 (45.80%) | 6,842 (35.38%) | 87.11% | 0.786 km | 22.22 min | 10.28 |
+| **1.25 km** | 90 min | 16,927 | 1,735 (55.68%) | 7,939 (41.05%) | 86.51% | 0.785 km | 30.37 min | 9.76 |
+| **2.00 km** | 15 min | 14,858 | 632 (20.28%) | 3,657 (18.91%) | 97.31% | 1.220 km | 7.95 min | 23.51 |
+| **2.00 km** | 30 min | 21,372 | 1,078 (34.60%) | 5,648 (29.21%) | 95.64% | 1.211 km | 14.29 min | 19.83 |
+| **2.00 km** | **60 min (Baseline)** | **28,911** | **1,470 (47.18%)** | **8,328 (43.06%)** | **94.42%** | **1.202 km** | **21.82 min** | **19.67** |
+| **2.00 km** | 90 min | 33,247 | 1,801 (57.80%) | 9,653 (49.91%) | 94.39% | 1.200 km | 29.86 min | 18.46 |
+| **3.50 km** | 15 min | 31,933 | 644 (20.67%) | 4,155 (21.49%) | 98.29% | 2.042 km | 7.95 min | 49.59 |
+| **3.50 km** | 30 min | 44,735 | 1,099 (35.27%) | 6,498 (33.60%) | 97.91% | 2.018 km | 13.87 min | 40.71 |
+| **3.50 km** | 60 min | 59,047 | 1,500 (48.14%) | 9,760 (50.47%) | 96.67% | 1.993 km | 20.96 min | 39.36 |
+| **3.50 km** | 90 min | 67,111 | 1,847 (59.27%) | 11,270 (58.28%) | 96.32% | 1.981 km | 28.51 min | 36.34 |
+
+### 11.4 Analytical Artifacts in `data/matching/`
+- `candidate_associations.parquet` (1,084 KB) — All 28,911 structured candidate associations.
+- `matching_summary.json` (3.7 KB) — Comprehensive summary metrics and multiplicity distributions.
+- `matching_evaluation.csv` (2.3 KB) — Full 12-parameter sensitivity grid.
+- `unmatched_observations.parquet` (276 KB) — Unassociated MODIS and VIIRS records.
+- `matching_experiment_metadata.json` (2.6 KB) — Reproducibility parameters, software versions, and regional bounds.
+
+### 11.5 Matching API Endpoints
+- `GET /api/matching/status` — Operational status and artifact readiness.
+- `GET /api/matching/summary` — Full matching experiment summary and benchmarks.
+- `GET /api/matching/associations` — Paginated and filtered candidate associations from Parquet storage.
+- `GET /api/matching/unmatched` — Paginated unassociated observations.
+- `GET /api/matching/evaluation` — 12-parameter sensitivity evaluation matrix.
+- `POST /api/matching/run` — On-demand spatial-temporal matching on user bounding boxes.
+
+---
+
+## 12. Scientific Considerations
 
 FireLens follows these principles:
 

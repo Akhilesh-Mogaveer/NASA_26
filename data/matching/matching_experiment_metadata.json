@@ -1,0 +1,71 @@
+{
+  "software_version": "FireLens v0.1.0 (Phase 4)",
+  "pipeline_stage": "Phase 4 - Spatial-Temporal Matching Engine",
+  "run_timestamp": "2026-11-14T18:28:55Z",
+  "dataset_sources": [
+    "data/processed/modis_normalized.csv",
+    "data/processed/viirs_normalized.csv"
+  ],
+  "candidate_spatial_radii_evaluated_km": [
+    1.25,
+    2.0,
+    3.5
+  ],
+  "candidate_temporal_windows_evaluated_minutes": [
+    15.0,
+    30.0,
+    60.0,
+    90.0
+  ],
+  "baseline_parameters": {
+    "spatial_radius_km": 2.0,
+    "temporal_window_minutes": 60.0,
+    "weight_spatial": 0.5,
+    "weight_temporal": 0.5
+  },
+  "scientific_disclaimer": "Candidate associations represent spatial and temporal proximity associations, NOT definitive proof that satellite observations correspond to the same physical fire front.",
+  "experiment_region_and_time": {
+    "primary_region": {
+      "name": "North American Boreal Forest Wildfire Complex",
+      "jurisdiction": "Saskatchewan / Manitoba, Canada",
+      "biome": "Boreal Needleleaf Forest",
+      "bounds": {
+        "min_lat": 54.0,
+        "max_lat": 58.0,
+        "min_lon": -106.0,
+        "max_lon": -102.0
+      },
+      "date_range": {
+        "start": "2025-08-01",
+        "end": "2025-08-02"
+      },
+      "observation_density": "High (22,455 obs in 4\u00b0 x 4\u00b0 over 48h)",
+      "modis_input_count": 3116,
+      "viirs_input_count": 19339
+    },
+    "secondary_region": {
+      "name": "Southern African Miombo Savanna Fire Belt",
+      "jurisdiction": "Zambia / Angola border region",
+      "biome": "Tropical / Subtropical Savanna and Grassland",
+      "bounds": {
+        "min_lat": -15.0,
+        "max_lat": -12.0,
+        "min_lon": 22.0,
+        "max_lon": 26.0
+      },
+      "date_range": {
+        "start": "2025-08-01",
+        "end": "2025-08-02"
+      },
+      "observation_density": "Moderate (4,599 obs in 3\u00b0 x 4\u00b0 over 48h)",
+      "modis_input_count": 955,
+      "viirs_input_count": 3644
+    },
+    "limitations_and_sampling_bias": [
+      "Polar-orbiting satellites provide discrete snapshot overpasses (~10:30 and ~13:30 local time), omitting fire behavior between satellite passes.",
+      "Candidate associations reflect spatial-temporal proximity; they do NOT prove identical physical flame fronts without airborne reference lidar or infrared thermal video.",
+      "Sub-pixel splitting naturally yields 1:N associations due to the 7.1x nadir pixel area difference between 1km MODIS and 375m VIIRS.",
+      "Scan-angle footprint expansion (bow-tie effect) increases spatial uncertainty near swath edges (up to 4.8 km for MODIS, 800m for VIIRS)."
+    ]
+  }
+}

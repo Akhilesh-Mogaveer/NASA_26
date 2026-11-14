@@ -1,0 +1,109 @@
+{
+  "generated_at": "2026-11-14T18:28:55Z",
+  "status": "completed",
+  "parameters": {
+    "spatial_radius_km": 2.0,
+    "temporal_window_minutes": 60.0,
+    "weight_spatial": 0.5,
+    "weight_temporal": 0.5,
+    "valid_only": true,
+    "exclude_duplicates": true
+  },
+  "input_counts": {
+    "modis_observations_considered": 3116,
+    "viirs_observations_considered": 19339,
+    "total_observations_considered": 22455
+  },
+  "matching_results": {
+    "total_candidate_associations": 28911,
+    "unique_modis_matched": 1470,
+    "unique_viirs_matched": 8328,
+    "unmatched_modis_count": 1646,
+    "unmatched_viirs_count": 11011,
+    "modis_match_rate_pct": 47.18,
+    "viirs_match_rate_pct": 43.06,
+    "ambiguous_modis_count": 1388,
+    "ambiguous_viirs_count": 4337
+  },
+  "multiplicity_breakdown": {
+    "1:1": 15,
+    "1:N": 2104,
+    "N:1": 24,
+    "M:N": 26768
+  },
+  "classification_breakdown": {
+    "strong_proximity": 5,
+    "candidate_association": 41,
+    "ambiguous_association": 28865
+  },
+  "statistics": {
+    "mean_distance_km": 1.202,
+    "median_distance_km": 1.24,
+    "min_distance_km": 0.016,
+    "max_distance_km": 2.0,
+    "mean_time_diff_min": 21.82,
+    "median_time_diff_min": 10.0,
+    "mean_heuristic_score": 0.518
+  },
+  "benchmarks": {
+    "candidate_generation_seconds": 14.766,
+    "association_processing_seconds": 0.936,
+    "sensitivity_grid_evaluation_seconds": 190.323,
+    "total_processing_seconds": 206.025,
+    "associations_per_second": 140.3
+  },
+  "experiment_metadata": {
+    "primary_region": {
+      "name": "North American Boreal Forest Wildfire Complex",
+      "jurisdiction": "Saskatchewan / Manitoba, Canada",
+      "biome": "Boreal Needleleaf Forest",
+      "bounds": {
+        "min_lat": 54.0,
+        "max_lat": 58.0,
+        "min_lon": -106.0,
+        "max_lon": -102.0
+      },
+      "date_range": {
+        "start": "2025-08-01",
+        "end": "2025-08-02"
+      },
+      "observation_density": "High (22,455 obs in 4\u00b0 x 4\u00b0 over 48h)",
+      "modis_input_count": 3116,
+      "viirs_input_count": 19339
+    },
+    "secondary_region": {
+      "name": "Southern African Miombo Savanna Fire Belt",
+      "jurisdiction": "Zambia / Angola border region",
+      "biome": "Tropical / Subtropical Savanna and Grassland",
+      "bounds": {
+        "min_lat": -15.0,
+        "max_lat": -12.0,
+        "min_lon": 22.0,
+        "max_lon": 26.0
+      },
+      "date_range": {
+        "start": "2025-08-01",
+        "end": "2025-08-02"
+      },
+      "observation_density": "Moderate (4,599 obs in 3\u00b0 x 4\u00b0 over 48h)",
+      "modis_input_count": 955,
+      "viirs_input_count": 3644
+    },
+    "limitations_and_sampling_bias": [
+      "Polar-orbiting satellites provide discrete snapshot overpasses (~10:30 and ~13:30 local time), omitting fire behavior between satellite passes.",
+      "Candidate associations reflect spatial-temporal proximity; they do NOT prove identical physical flame fronts without airborne reference lidar or infrared thermal video.",
+      "Sub-pixel splitting naturally yields 1:N associations due to the 7.1x nadir pixel area difference between 1km MODIS and 375m VIIRS.",
+      "Scan-angle footprint expansion (bow-tie effect) increases spatial uncertainty near swath edges (up to 4.8 km for MODIS, 800m for VIIRS)."
+    ]
+  },
+  "comparative_region_results": {
+    "region_name": "Southern African Miombo Savanna Fire Belt",
+    "modis_count": 955,
+    "viirs_count": 3644,
+    "associations_count": 16,
+    "modis_match_rate_pct": 0.73,
+    "viirs_match_rate_pct": 0.25,
+    "mean_distance_km": 0.984,
+    "mean_time_diff_min": 46.0
+  }
+}

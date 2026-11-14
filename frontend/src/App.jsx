@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import OverviewView from './components/modules/OverviewView';
+import MatchingView from './components/modules/MatchingView';
 import FireMapView from './components/modules/FireMapView';
 import ComparisonView from './components/modules/ComparisonView';
 import ActivityView from './components/modules/ActivityView';
@@ -73,6 +74,7 @@ export default function App() {
             setActiveTab={setActiveTab}
           />
         )}
+        {activeTab === 'matching' && <MatchingView />}
         {activeTab === 'map' && <FireMapView />}
         {activeTab === 'comparison' && <ComparisonView />}
         {activeTab === 'activity' && <ActivityView />}

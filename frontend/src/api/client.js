@@ -205,4 +205,100 @@ export async function getGridDensity(params = {}) {
   }
 }
 
+/**
+ * =========================================================================
+ * Phase 4 Spatial-Temporal Matching API Client Methods
+ * =========================================================================
+ */
+
+/**
+ * Get matching engine status
+ */
+export async function getMatchingStatus() {
+  try {
+    const response = await apiClient.get('/api/matching/status');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch matching status',
+    };
+  }
+}
+
+/**
+ * Get matching summary and experiment results
+ */
+export async function getMatchingSummary() {
+  try {
+    const response = await apiClient.get('/api/matching/summary');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch matching summary',
+    };
+  }
+}
+
+/**
+ * Get paginated candidate associations with optional filtering
+ */
+export async function getMatchingAssociations(params = {}) {
+  try {
+    const response = await apiClient.get('/api/matching/associations', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch associations',
+    };
+  }
+}
+
+/**
+ * Get paginated unmatched observations
+ */
+export async function getMatchingUnmatched(params = {}) {
+  try {
+    const response = await apiClient.get('/api/matching/unmatched', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch unmatched observations',
+    };
+  }
+}
+
+/**
+ * Get 12-parameter sensitivity evaluation matrix
+ */
+export async function getMatchingEvaluation() {
+  try {
+    const response = await apiClient.get('/api/matching/evaluation');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch matching evaluation',
+    };
+  }
+}
+
+/**
+ * Run spatial-temporal matching on custom slice or parameters
+ */
+export async function runMatching(params = {}) {
+  try {
+    const response = await apiClient.post('/api/matching/run', params);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to execute matching workflow',
+    };
+  }
+}
+
 export default apiClient;

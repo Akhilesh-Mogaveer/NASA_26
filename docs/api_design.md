@@ -194,6 +194,32 @@ Example response:
 
 These values are illustrative.
 
+### 4.10 Spatial-Temporal Matching Engine Endpoints (Phase 4)
+
+#### GET /api/matching/status
+Retrieves matching engine status, artifact readiness, and parameter settings.
+
+#### GET /api/matching/summary
+Retrieves top-level matching summary, multiplicity breakdown (1:1, 1:N, N:1, M:N), classification counts, distance/time statistics, and benchmark runtimes.
+
+#### GET /api/matching/associations
+Retrieves paginated and filtered candidate associations from Parquet storage.
+- Query parameters: `limit` (default: 50), `offset` (default: 0), `min_score` (default: 0.0), `classification` (optional), `multiplicity` (optional), `sort_by` (default: `heuristic_score`), `ascending` (default: `false`).
+
+#### GET /api/matching/unmatched
+Retrieves paginated observations that found no candidate matches within thresholds.
+- Query parameters: `instrument` (optional: `MODIS` or `VIIRS`), `limit` (default: 50), `offset` (default: 0).
+
+#### GET /api/matching/evaluation
+Retrieves the 12-parameter sensitivity evaluation matrix across:
+- Spatial radii: `[1.25 km, 2.0 km, 3.5 km]`
+- Temporal windows: `[15 min, 30 min, 60 min, 90 min]`
+Includes candidate counts, unique matched observations, ambiguity percentages, mean distances, and mean time differences.
+
+#### POST /api/matching/run
+Triggers spatial-temporal matching on user-defined bounding boxes or parameters.
+- Request body: `MatchingRunRequest` (`spatial_radius_km`, `temporal_window_minutes`, `weight_spatial`, `weight_temporal`, bounding box, date range).
+
 ## 5. API Error Handling
 
 The API should return appropriate HTTP status codes.

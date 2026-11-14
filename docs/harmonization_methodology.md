@@ -272,23 +272,55 @@ Evaluate the processed dataset using:
 
 Display data quality information alongside the analysis.
 
-## 14. Sensitivity Testing
+## 14. Phase 4 Spatial-Temporal Matching Engine & Sensitivity Analysis
 
-The system should test different spatial and temporal thresholds.
+### 14.1 Geodesic Distance Calculation
+Euclidean distance on raw latitude and longitude introduces severe spatial distortion, especially at higher latitudes where meridians converge ($\Delta x \propto \cos\phi$) and across the antimeridian ($\pm 180^\circ$). FireLens calculates the exact great-circle geodesic separation using the Haversine formula with antimeridian wrap-around adjustment:
 
-For example:
+$$\Delta\lambda = (\lambda_2 - \lambda_1 + \pi) \pmod{2\pi} - \pi$$
 
-- Smaller spatial threshold.
-- Medium spatial threshold.
-- Larger spatial threshold.
-- Shorter time threshold.
-- Longer time threshold.
+$$a = \sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\phi_1 \cos\phi_2 \sin^2\left(\frac{\Delta\lambda}{2}\right)$$
 
-Compare the number of candidate matches under different settings.
+$$d = 2 \cdot R_{\text{earth}} \cdot \arctan2\left(\sqrt{a}, \sqrt{1-a}\right), \quad R_{\text{earth}} = 6371.0088\text{ km}$$
 
-This helps demonstrate how threshold choices affect the results.
+### 14.2 Spatial-Temporal Candidate Generation
+To scale over millions of observations without an $O(N \cdot M)$ all-pairs bottleneck:
+1. **Temporal Gating:** Observations are sorted chronologically and indexed by UTC epoch seconds. For each MODIS observation at $t_{\text{modis}}$, VIIRS records are filtered using binary search to the candidate window $[t_{\text{modis}} - \Delta t_{\max}, t_{\text{modis}} + \Delta t_{\max}]$.
+2. **Spatial Indexing:** A `BallTree` with the `haversine` metric is constructed over the radian coordinates of the temporally filtered VIIRS candidates, executing radius queries at $r = R_{\max} / R_{\text{earth}}$ in $O(\log K)$ time.
 
-The project must document the chosen thresholds and the reasons for selecting them.
+### 14.3 Heuristic Proximity Ranking Score
+Candidate associations are ranked by an empirical proximity score:
+
+$$\text{score} = w_{\text{spatial}} \cdot \text{spatial\_score} + w_{\text{temporal}} \cdot \text{temporal\_score}$$
+
+$$\text{spatial\_score} = \max\left(0, 1 - \frac{d}{R_{\max}}\right), \quad \text{temporal\_score} = \max\left(0, 1 - \frac{\Delta t}{T_{\max}}\right)$$
+
+*Important Note:* This score is an empirical ranking metric, NOT a calibrated probability of physical flame front identity.
+
+### 14.4 Multiplicity and Ambiguity Classification
+- **1:1 Pair:** Exactly 1 MODIS detection matches 1 VIIRS detection.
+- **1:N Sub-Pixel Split:** 1 MODIS 1km footprint covers multiple adjacent 375m VIIRS detections.
+- **N:1 Overlap:** Scan-edge panoramic distortion causes multiple MODIS footprints to overlap 1 VIIRS detection.
+- **M:N Multi-Cluster:** Contiguous intense wildfire fronts where multiple pixels mutually interlink.
+- **Ambiguity Detection:** When top-ranked candidates for an observation have heuristic scores within $\Delta \text{score} \le 0.15$, associations are flagged as `ambiguous_association` rather than arbitrarily choosing one.
+
+### 14.5 Real-Data Sensitivity Evaluation (12 Parameter Combinations)
+Evaluated on authentic NASA FIRMS observations from the North American Boreal Forest Wildfire Complex (Saskatchewan / Manitoba, Canada: Lat 54°–58°N, Lon 106°–102°W, August 1–2, 2025; 22,455 valid records: 3,116 MODIS, 19,339 VIIRS):
+
+| Spatial Radius ($R$) | Temporal Window ($T$) | Candidate Associations | Unique Matched MODIS | Unique Matched VIIRS | MODIS Ambiguity Rate | Mean Distance | Mean $\Delta t$ | Candidates / Matched MODIS |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **1.25 km** | 15 min | 7,301 | 620 (19.90%) | 3,143 (16.25%) | 89.68% | 0.793 km | 7.95 min | 11.78 |
+| **1.25 km** | 30 min | 10,704 | 1,050 (33.70%) | 4,723 (24.42%) | 88.38% | 0.791 km | 14.58 min | 10.19 |
+| **1.25 km** | 60 min | 14,665 | 1,427 (45.80%) | 6,842 (35.38%) | 87.11% | 0.786 km | 22.22 min | 10.28 |
+| **1.25 km** | 90 min | 16,927 | 1,735 (55.68%) | 7,939 (41.05%) | 86.51% | 0.785 km | 30.37 min | 9.76 |
+| **2.00 km** | 15 min | 14,858 | 632 (20.28%) | 3,657 (18.91%) | 97.31% | 1.220 km | 7.95 min | 23.51 |
+| **2.00 km** | 30 min | 21,372 | 1,078 (34.60%) | 5,648 (29.21%) | 95.64% | 1.211 km | 14.29 min | 19.83 |
+| **2.00 km** | **60 min (Baseline)** | **28,911** | **1,470 (47.18%)** | **8,328 (43.06%)** | **94.42%** | **1.202 km** | **21.82 min** | **19.67** |
+| **2.00 km** | 90 min | 33,247 | 1,801 (57.80%) | 9,653 (49.91%) | 94.39% | 1.200 km | 29.86 min | 18.46 |
+| **3.50 km** | 15 min | 31,933 | 644 (20.67%) | 4,155 (21.49%) | 98.29% | 2.042 km | 7.95 min | 49.59 |
+| **3.50 km** | 30 min | 44,735 | 1,099 (35.27%) | 6,498 (33.60%) | 97.91% | 2.018 km | 13.87 min | 40.71 |
+| **3.50 km** | 60 min | 59,047 | 1,500 (48.14%) | 9,760 (50.47%) | 96.67% | 1.993 km | 20.96 min | 39.36 |
+| **3.50 km** | 90 min | 67,111 | 1,847 (59.27%) | 11,270 (58.28%) | 96.32% | 1.981 km | 28.51 min | 36.34 |
 
 ## 15. Expected Output
 
