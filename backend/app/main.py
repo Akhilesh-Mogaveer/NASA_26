@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.models.schemas import RootResponse
-from app.routes import health, data
+from app.routes import health, data, analytics
 
 
 @asynccontextmanager
@@ -21,6 +21,7 @@ async def lifespan(app: FastAPI):
     settings.DATA_RAW_VIIRS.mkdir(parents=True, exist_ok=True)
     settings.DATA_PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
     settings.DATA_REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    settings.DATA_ANALYTICS_DIR.mkdir(parents=True, exist_ok=True)
     yield
 
 
@@ -75,5 +76,6 @@ async def root() -> RootResponse:
 # Register API routers under /api
 app.include_router(health.router, prefix=settings.API_PREFIX)
 app.include_router(data.router, prefix=settings.API_PREFIX)
+app.include_router(analytics.router, prefix=settings.API_PREFIX)
 # Also register /health for standard platform health probes (e.g., Render, Kubernetes)
 app.include_router(health.router)

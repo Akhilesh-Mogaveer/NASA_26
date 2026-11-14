@@ -240,21 +240,38 @@ def test_full_pipeline_output_generation(test_dirs):
     assert saved_report["total_records"] == 4
 
 
-def test_api_data_endpoints():
-    """Verify the FastAPI data endpoints (/api/data/status, /api/data/ingest, /api/data/preview)."""
+def test_api_data_endpoints(tmp_path, monkeypatch):
+    """Verify the FastAPI data endpoints without overwriting production datasets."""
+    test_raw_modis = tmp_path / "raw" / "modis"
+    test_raw_viirs = tmp_path / "raw" / "viirs"
+    test_processed = tmp_path / "processed"
+    test_reports = tmp_path / "reports"
+    for d in (test_raw_modis, test_raw_viirs, test_processed, test_reports):
+        d.mkdir(parents=True, exist_ok=True)
+
+    # Seed with small synthetic fixtures
+    (test_raw_modis / "synthetic_m.csv").write_text(SYNTHETIC_MODIS_VALID_CSV, encoding="utf-8")
+    (test_raw_viirs / "synthetic_v.csv").write_text(SYNTHETIC_VIIRS_VALID_CSV, encoding="utf-8")
+
+    from app.config import settings
+    monkeypatch.setattr(settings, "DATA_RAW_MODIS", test_raw_modis)
+    monkeypatch.setattr(settings, "DATA_RAW_VIIRS", test_raw_viirs)
+    monkeypatch.setattr(settings, "DATA_PROCESSED_DIR", test_processed)
+    monkeypatch.setattr(settings, "DATA_REPORTS_DIR", test_reports)
+
     # 1. Check initial status
     status_res = client.get("/api/data/status")
     assert status_res.status_code == 200
     status_data = status_res.json()
     assert "status" in status_data
-    assert "has_processed_data" in status_data
 
-    # 2. Trigger Ingest endpoint (capped at 100 rows for rapid unit test)
-    ingest_res = client.post("/api/data/ingest?max_rows_per_file=100")
+    # 2. Trigger Ingest endpoint
+    ingest_res = client.post("/api/data/ingest")
     assert ingest_res.status_code == 200
     ingest_data = ingest_res.json()
     assert "report" in ingest_data
     assert "number_of_source_files" in ingest_data
+    assert ingest_data["total_records"] == 4
 
     # 3. Check quality endpoint
     quality_res = client.get("/api/data/quality")
@@ -268,4 +285,4 @@ def test_api_data_endpoints():
     assert preview_res.status_code == 200
     preview_data = preview_res.json()
     assert "records" in preview_data
-    assert "total_available" in preview_data
+    assert preview_data["total_available"] == 4

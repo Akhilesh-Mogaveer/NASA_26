@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-11-14T15:28:35Z",
+  "dataset_provenance": "NASA FIRMS (Fire Information for Resource Management System)",
+  "temporal_coverage": {
+    "start_date": "2025-01-01",
+    "end_date": "2025-12-31",
+    "year": 2025
+  },
+  "counts": {
+    "total_observations": 22175341,
+    "valid_observations": 22175332,
+    "invalid_observations": 9,
+    "modis_count": 3708771,
+    "viirs_count": 18466569,
+    "viirs_to_modis_ratio": 4.979
+  },
+  "energetics": {
+    "total_frp_mw": 331667580.75,
+    "mean_frp_mw": 14.96,
+    "modis_total_mw": 152822705.8,
+    "viirs_total_mw": 178844880.85,
+    "modis_mean_mw": 41.21,
+    "viirs_mean_mw": 9.68
+  },
+  "geographical_extent": {
+    "min_latitude": -90.0,
+    "max_latitude": 90.0,
+    "min_longitude": -180.0,
+    "max_longitude": 180.0,
+    "total_active_grid_cells": 4300
+  },
+  "key_findings": [
+    "VIIRS detects 4.979x more active fire hot spots than MODIS (18.47M vs 3.71M), driven by its 375m spatial resolution.",
+    "MODIS records a significantly higher mean FRP (41.21 MW vs 9.68 MW) because smaller, cooler fires remain below the 1km MODIS detection threshold.",
+    "Integrated total radiated power is remarkably comparable: 152.8M MW for MODIS vs 178.8M MW for VIIRS (+17%), showing consistent energy estimation for major fires.",
+    "Both sensors exhibit peak diurnal fire activity in the early afternoon (12:00-14:00 UTC regional overpasses) matching peak ambient temperatures and lowest fuel moisture.",
+    "Data quality is exceptional: 22,175,332 out of 22,175,341 records (>99.9999%) are valid with zero missing coordinates or corrupt timestamps."
+  ]
+}

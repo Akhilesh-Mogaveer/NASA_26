@@ -46,6 +46,7 @@ class Settings(BaseSettings):
     DATA_RAW_VIIRS: Path = BASE_DIR / "data" / "raw" / "viirs"
     DATA_PROCESSED_DIR: Path = BASE_DIR / "data" / "processed"
     DATA_REPORTS_DIR: Path = BASE_DIR / "data" / "reports"
+    DATA_ANALYTICS_DIR: Path = BASE_DIR / "data" / "analytics"
 
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / "backend" / ".env"),

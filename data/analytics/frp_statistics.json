@@ -1,0 +1,107 @@
+{
+  "generated_at": "2026-11-14T15:28:26Z",
+  "overall": {
+    "min": 0.0,
+    "max": 11247.1,
+    "mean": 14.96,
+    "std": 51.36,
+    "median": 6.15,
+    "q25": 3.08,
+    "q75": 12.68,
+    "q95": 50.19,
+    "q99": 149.2,
+    "total_mw": 331667586.65,
+    "count": 22175340
+  },
+  "modis": {
+    "min": 0.0,
+    "max": 11247.1,
+    "mean": 41.21,
+    "std": 113.47,
+    "median": 17.9,
+    "q25": 10.1,
+    "q75": 37.1,
+    "q95": 130.3,
+    "q99": 391.1,
+    "total_mw": 152822705.8,
+    "count": 3708771
+  },
+  "viirs": {
+    "min": 0.0,
+    "max": 3907.87,
+    "mean": 9.68,
+    "std": 20.39,
+    "median": 5.05,
+    "q25": 2.62,
+    "q75": 9.45,
+    "q95": 30.75,
+    "q99": 88.62,
+    "total_mw": 178844880.85,
+    "count": 18466569
+  },
+  "histogram": [
+    {
+      "bin_label": "0-5",
+      "bin_order": 1,
+      "modis_count": 84755.0,
+      "viirs_count": 9148369.0,
+      "total_count": 9233124
+    },
+    {
+      "bin_label": "5-10",
+      "bin_order": 2,
+      "modis_count": 821331.0,
+      "viirs_count": 5021805.0,
+      "total_count": 5843136
+    },
+    {
+      "bin_label": "10-25",
+      "bin_order": 3,
+      "modis_count": 1416741.0,
+      "viirs_count": 3060078.0,
+      "total_count": 4476819
+    },
+    {
+      "bin_label": "25-50",
+      "bin_order": 4,
+      "modis_count": 728624.0,
+      "viirs_count": 778988.0,
+      "total_count": 1507612
+    },
+    {
+      "bin_label": "50-100",
+      "bin_order": 5,
+      "modis_count": 389725.0,
+      "viirs_count": 307653.0,
+      "total_count": 697378
+    },
+    {
+      "bin_label": "100-250",
+      "bin_order": 6,
+      "modis_count": 194893.0,
+      "viirs_count": 129612.0,
+      "total_count": 324505
+    },
+    {
+      "bin_label": "250-500",
+      "bin_order": 7,
+      "modis_count": 47266.0,
+      "viirs_count": 18140.0,
+      "total_count": 65406
+    },
+    {
+      "bin_label": "500-1000",
+      "bin_order": 8,
+      "modis_count": 17311.0,
+      "viirs_count": 1791.0,
+      "total_count": 19102
+    },
+    {
+      "bin_label": "1000+",
+      "bin_order": 9,
+      "modis_count": 8125.0,
+      "viirs_count": 133.0,
+      "total_count": 8258
+    }
+  ]
+}

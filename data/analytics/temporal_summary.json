@@ -1,0 +1,348 @@
+{
+  "generated_at": "2026-11-14T15:28:05Z",
+  "monthly": [
+    {
+      "month": "2025-01",
+      "modis_count": 351099.0,
+      "viirs_count": 1717506.0,
+      "total_count": 2068605,
+      "modis_mean_frp": 34.57,
+      "viirs_mean_frp": 7.93,
+      "modis_total_frp": 12137088.5,
+      "viirs_total_frp": 13616694.0,
+      "total_frp": 25753782.5
+    },
+    {
+      "month": "2025-02",
+      "modis_count": 254019.0,
+      "viirs_count": 1372813.0,
+      "total_count": 1626832,
+      "modis_mean_frp": 33.55,
+      "viirs_mean_frp": 7.99,
+      "modis_total_frp": 8521278.4,
+      "viirs_total_frp": 10973480.0,
+      "total_frp": 19494758.4
+    },
+    {
+      "month": "2025-03",
+      "modis_count": 289867.0,
+      "viirs_count": 1530413.0,
+      "total_count": 1820280,
+      "modis_mean_frp": 33.61,
+      "viirs_mean_frp": 8.78,
+      "modis_total_frp": 9743148.6,
+      "viirs_total_frp": 13431632.26,
+      "total_frp": 23174780.86
+    },
+    {
+      "month": "2025-04",
+      "modis_count": 208723.0,
+      "viirs_count": 1048608.0,
+      "total_count": 1257331,
+      "modis_mean_frp": 34.44,
+      "viirs_mean_frp": 9.53,
+      "modis_total_frp": 7189068.3,
+      "viirs_total_frp": 9997607.15,
+      "total_frp": 17186675.45
+    },
+    {
+      "month": "2025-05",
+      "modis_count": 222907.0,
+      "viirs_count": 1126913.0,
+      "total_count": 1349820,
+      "modis_mean_frp": 57.07,
+      "viirs_mean_frp": 10.58,
+      "modis_total_frp": 12720301.6,
+      "viirs_total_frp": 11925832.43,
+      "total_frp": 24646134.03
+    },
+    {
+      "month": "2025-06",
+      "modis_count": 264457.0,
+      "viirs_count": 1222243.0,
+      "total_count": 1486700,
+      "modis_mean_frp": 44.59,
+      "viirs_mean_frp": 10.14,
+      "modis_total_frp": 11791873.3,
+      "viirs_total_frp": 12387526.11,
+      "total_frp": 24179399.41
+    },
+    {
+      "month": "2025-07",
+      "modis_count": 423815.0,
+      "viirs_count": 1888637.0,
+      "total_count": 2312452,
+      "modis_mean_frp": 48.71,
+      "viirs_mean_frp": 11.23,
+      "modis_total_frp": 20644687.2,
+      "viirs_total_frp": 21209947.96,
+      "total_frp": 41854635.16
+    },
+    {
+      "month": "2025-08",
+      "modis_count": 558685.0,
+      "viirs_count": 2623955.0,
+      "total_count": 3182640,
+      "modis_mean_frp": 45.98,
+      "viirs_mean_frp": 11.0,
+      "modis_total_frp": 25689707.7,
+      "viirs_total_frp": 28864491.16,
+      "total_frp": 54554198.86
+    },
+    {
+      "month": "2025-09",
+      "modis_count": 398557.0,
+      "viirs_count": 2033813.0,
+      "total_count": 2432370,
+      "modis_mean_frp": 41.46,
+      "viirs_mean_frp": 10.2,
+      "modis_total_frp": 16523009.0,
+      "viirs_total_frp": 20747163.25,
+      "total_frp": 37270172.25
+    },
+    {
+      "month": "2025-10",
+      "modis_count": 318740.0,
+      "viirs_count": 1690540.0,
+      "total_count": 2009280,
+      "modis_mean_frp": 43.24,
+      "viirs_mean_frp": 10.28,
+      "modis_total_frp": 13782505.5,
+      "viirs_total_frp": 17382627.4,
+      "total_frp": 31165132.9
+    },
+    {
+      "month": "2025-11",
+      "modis_count": 215110.0,
+      "viirs_count": 1146914.0,
+      "total_count": 1362024,
+      "modis_mean_frp": 35.1,
+      "viirs_mean_frp": 8.44,
+      "modis_total_frp": 7549301.0,
+      "viirs_total_frp": 9678364.6,
+      "total_frp": 17227665.6
+    },
+    {
+      "month": "2025-12",
+      "modis_count": 202793.0,
+      "viirs_count": 1064214.0,
+      "total_count": 1267007,
+      "modis_mean_frp": 32.2,
+      "viirs_mean_frp": 8.11,
+      "modis_total_frp": 6530730.8,
+      "viirs_total_frp": 8629514.53,
+      "total_frp": 15160245.33
+    }
+  ],
+  "hourly": [
+    {
+      "hour_utc": 0,
+      "modis_count": 96045.0,
+      "viirs_count": 389081.0,
+      "total_count": 485126
+    },
+    {
+      "hour_utc": 1,
+      "modis_count": 75424.0,
+      "viirs_count": 209051.0,
+      "total_count": 284475
+    },
+    {
+      "hour_utc": 2,
+      "modis_count": 77585.0,
+      "viirs_count": 132296.0,
+      "total_count": 209881
+    },
+    {
+      "hour_utc": 3,
+      "modis_count": 61784.0,
+      "viirs_count": 313489.0,
+      "total_count": 375273
+    },
+    {
+      "hour_utc": 4,
+      "modis_count": 61728.0,
+      "viirs_count": 802142.0,
+      "total_count": 863870
+    },
+    {
+      "hour_utc": 5,
+      "modis_count": 118467.0,
+      "viirs_count": 688479.0,
+      "total_count": 806946
+    },
+    {
+      "hour_utc": 6,
+      "modis_count": 168450.0,
+      "viirs_count": 585379.0,
+      "total_count": 753829
+    },
+    {
+      "hour_utc": 7,
+      "modis_count": 260938.0,
+      "viirs_count": 579245.0,
+      "total_count": 840183
+    },
+    {
+      "hour_utc": 8,
+      "modis_count": 109865.0,
+      "viirs_count": 531178.0,
+      "total_count": 641043
+    },
+    {
+      "hour_utc": 9,
+      "modis_count": 79948.0,
+      "viirs_count": 439767.0,
+      "total_count": 519715
+    },
+    {
+      "hour_utc": 10,
+      "modis_count": 47075.0,
+      "viirs_count": 1354338.0,
+      "total_count": 1401413
+    },
+    {
+      "hour_utc": 11,
+      "modis_count": 107597.0,
+      "viirs_count": 3708098.0,
+      "total_count": 3815695
+    },
+    {
+      "hour_utc": 12,
+      "modis_count": 581249.0,
+      "viirs_count": 2852895.0,
+      "total_count": 3434144
+    },
+    {
+      "hour_utc": 13,
+      "modis_count": 792392.0,
+      "viirs_count": 821582.0,
+      "total_count": 1613974
+    },
+    {
+      "hour_utc": 14,
+      "modis_count": 213984.0,
+      "viirs_count": 381735.0,
+      "total_count": 595719
+    },
+    {
+      "hour_utc": 15,
+      "modis_count": 119923.0,
+      "viirs_count": 232871.0,
+      "total_count": 352794
+    },
+    {
+      "hour_utc": 16,
+      "modis_count": 41573.0,
+      "viirs_count": 559013.0,
+      "total_count": 600586
+    },
+    {
+      "hour_utc": 17,
+      "modis_count": 107529.0,
+      "viirs_count": 715649.0,
+      "total_count": 823178
+    },
+    {
+      "hour_utc": 18,
+      "modis_count": 167818.0,
+      "viirs_count": 724055.0,
+      "total_count": 891873
+    },
+    {
+      "hour_utc": 19,
+      "modis_count": 172507.0,
+      "viirs_count": 583613.0,
+      "total_count": 756120
+    },
+    {
+      "hour_utc": 20,
+      "modis_count": 110240.0,
+      "viirs_count": 398657.0,
+      "total_count": 508897
+    },
+    {
+      "hour_utc": 21,
+      "modis_count": 63630.0,
+      "viirs_count": 275218.0,
+      "total_count": 338848
+    },
+    {
+      "hour_utc": 22,
+      "modis_count": 27619.0,
+      "viirs_count": 491376.0,
+      "total_count": 518995
+    },
+    {
+      "hour_utc": 23,
+      "modis_count": 45402.0,
+      "viirs_count": 697362.0,
+      "total_count": 742764
+    }
+  ],
+  "day_of_week": [
+    {
+      "day_name": "Sunday",
+      "dow_index": 0,
+      "modis_count": 480043.0,
+      "viirs_count": 2386548.0,
+      "total_count": 2866591
+    },
+    {
+      "day_name": "Monday",
+      "dow_index": 1,
+      "modis_count": 524173.0,
+      "viirs_count": 2623223.0,
+      "total_count": 3147396
+    },
+    {
+      "day_name": "Tuesday",
+      "dow_index": 2,
+      "modis_count": 549423.0,
+      "viirs_count": 2696456.0,
+      "total_count": 3245879
+    },
+    {
+      "day_name": "Wednesday",
+      "dow_index": 3,
+      "modis_count": 548017.0,
+      "viirs_count": 2724642.0,
+      "total_count": 3272659
+    },
+    {
+      "day_name": "Thursday",
+      "dow_index": 4,
+      "modis_count": 539656.0,
+      "viirs_count": 2729097.0,
+      "total_count": 3268753
+    },
+    {
+      "day_name": "Friday",
+      "dow_index": 5,
+      "modis_count": 530032.0,
+      "viirs_count": 2625474.0,
+      "total_count": 3155506
+    },
+    {
+      "day_name": "Saturday",
+      "dow_index": 6,
+      "modis_count": 537428.0,
+      "viirs_count": 2681129.0,
+      "total_count": 3218557
+    }
+  ],
+  "day_night": {
+    "modis": {
+      "day_count": 3125299,
+      "night_count": 583473,
+      "day_percentage": 84.27,
+      "night_percentage": 15.73
+    },
+    "viirs": {
+      "day_count": 13710691,
+      "night_count": 4755878,
+      "day_percentage": 74.25,
+      "night_percentage": 25.75
+    }
+  }
+}

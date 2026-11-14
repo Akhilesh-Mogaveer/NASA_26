@@ -111,4 +111,98 @@ export async function getNormalizedPreview(params = {}) {
   }
 }
 
+// ==========================================
+// Phase 3 Analytics API Client Functions
+// ==========================================
+
+/**
+ * Get top-level analytics overview across 22.17M observations
+ */
+export async function getAnalyticsOverview() {
+  try {
+    const response = await apiClient.get('/api/analytics/overview');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch analytics overview',
+    };
+  }
+}
+
+/**
+ * Get temporal activity analytics (monthly, diurnal hourly, day/night)
+ */
+export async function getTemporalAnalytics() {
+  try {
+    const response = await apiClient.get('/api/analytics/temporal');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch temporal analytics',
+    };
+  }
+}
+
+/**
+ * Get Fire Radiative Power (MW) parametric statistics and histogram
+ */
+export async function getFRPAnalytics() {
+  try {
+    const response = await apiClient.get('/api/analytics/frp');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch FRP analytics',
+    };
+  }
+}
+
+/**
+ * Get multi-sensor MODIS vs VIIRS comparison metrics
+ */
+export async function getSensorComparison() {
+  try {
+    const response = await apiClient.get('/api/analytics/sensor-comparison');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch sensor comparison',
+    };
+  }
+}
+
+/**
+ * Get geographical clustering and latitudinal profile
+ */
+export async function getGeographicalAnalytics(topN = 20) {
+  try {
+    const response = await apiClient.get('/api/analytics/geographical', { params: { top_n: topN } });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch geographical analytics',
+    };
+  }
+}
+
+/**
+ * Get 2-degree grid cell density for map display
+ */
+export async function getGridDensity(params = {}) {
+  try {
+    const response = await apiClient.get('/api/analytics/grid-density', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch grid density',
+    };
+  }
+}
+
 export default apiClient;

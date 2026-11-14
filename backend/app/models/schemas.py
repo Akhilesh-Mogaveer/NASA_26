@@ -143,3 +143,65 @@ class DataPreviewResponse(BaseModel):
     records: List[Dict[str, Any]]
     message: str
 
+
+# Phase 3 Analytics Schemas
+
+class AnalyticsOverviewResponse(BaseModel):
+    """High-level analytics overview metrics."""
+    generated_at: str
+    dataset_provenance: str
+    temporal_coverage: Dict[str, Any]
+    counts: Dict[str, Any]
+    energetics: Dict[str, Any]
+    geographical_extent: Dict[str, Any]
+    key_findings: List[str]
+
+
+class TemporalAnalyticsResponse(BaseModel):
+    """Temporal activity distribution across months, hours, days of week, and day/night."""
+    generated_at: str
+    monthly: List[Dict[str, Any]]
+    hourly: List[Dict[str, Any]]
+    day_of_week: List[Dict[str, Any]]
+    day_night: Dict[str, Any]
+
+
+class FRPAnalyticsResponse(BaseModel):
+    """Fire Radiative Power parametric and non-parametric statistics and histogram."""
+    generated_at: str
+    overall: Dict[str, Any]
+    modis: Dict[str, Any]
+    viirs: Dict[str, Any]
+    histogram: List[Dict[str, Any]]
+
+
+class GridCellItem(BaseModel):
+    """Aggregated 2-degree grid cell density."""
+    lat_bin: float
+    lon_bin: float
+    modis_count: int
+    viirs_count: int
+    total_count: int
+    mean_frp: float
+    total_frp: float
+
+
+class GeographicalAnalyticsResponse(BaseModel):
+    """Geographical distribution and top active grid clusters."""
+    total_active_cells: int
+    top_cells: List[GridCellItem]
+    latitudinal_distribution: List[Dict[str, Any]]
+
+
+class SensorComparisonDetailedResponse(BaseModel):
+    """Detailed scientific comparison between MODIS and VIIRS active-fire instruments."""
+    generated_at: str
+    observations: Dict[str, Any]
+    spatial_resolution: Dict[str, Any]
+    frp_comparison: Dict[str, Any]
+    confidence_distribution: Dict[str, Any]
+    day_night_comparison: Dict[str, Any]
+    orbital_parameters: Dict[str, Any]
+    scientific_reasons_for_divergence: List[str]
+
+

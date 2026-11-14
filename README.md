@@ -282,7 +282,7 @@ Generated outputs will be saved to:
 
 ### 9.5 How to Run Automated Backend Tests
 
-Run the complete Pytest suite (including health, ingestion, bounds validation, duplicate checks, and endpoint tests):
+Run the complete Pytest suite (including health, ingestion, bounds validation, duplicate checks, analytics services, and endpoint tests):
 
 ```powershell
 cd backend
@@ -290,7 +290,52 @@ cd backend
 pytest -v
 ```
 
-## 10. Scientific Considerations
+---
+
+## 10. Phase 3: Exploratory Data Analysis & Scientific Analytics
+
+FireLens Phase 3 delivers deep scientific exploration over **22,175,341 authentic NASA FIRMS observations** from the 2025 calendar year (3.71M MODIS C6.1 and 18.47M VIIRS C2 NOAA-20).
+
+### 10.1 Jupyter EDA Notebook
+The primary scientific analysis deliverable is located at:
+- **[`notebooks/FireLens_EDA.ipynb`](./notebooks/FireLens_EDA.ipynb)** (29 fully executed cells with embedded high-resolution figures)
+- Documentation: **[`notebooks/README.md`](./notebooks/README.md)**
+
+To launch or re-execute the notebook:
+```powershell
+# From project root
+jupyter lab notebooks/FireLens_EDA.ipynb
+```
+
+### 10.2 Precomputed Analytical Artifacts
+High-performance analytical aggregations computed via DuckDB columnar queries are persisted in `data/analytics/`:
+- `analytics_summary.json`: Top-level platform counts, energetics, and empirical findings.
+- `temporal_summary.json`: 12-month seasonality, 24-hour diurnal cycle, day-of-week, and day/night splits.
+- `monthly_statistics.csv`: Monthly sensor counts and mean/total FRP.
+- `daily_distribution.csv`: Daily hot spot counts and radiated power.
+- `hourly_distribution.csv`: Diurnal 00:00–23:00 UTC hourly distribution.
+- `frp_statistics.json`: Parametric/non-parametric FRP metrics and power histogram bins.
+- `geographical_grid_density.csv`: Standardized 2-degree global density grid (4,300 active cells).
+- `sensor_comparison.json`: Detailed multi-sensor comparison metrics and physical root causes.
+
+### 10.3 Scientific Analytics API Endpoints
+The backend provides sub-millisecond, memory-cached analytics endpoints:
+- `GET /api/analytics/overview` — High-level platform counts, energetics, and key findings.
+- `GET /api/analytics/temporal` — Monthly, hourly (diurnal), and day/night distributions.
+- `GET /api/analytics/frp` — Parametric metrics, percentiles (q25, median, q75, q95, q99), and power histogram.
+- `GET /api/analytics/sensor-comparison` — Detailed MODIS vs. VIIRS instrument and footprint comparison.
+- `GET /api/analytics/geographical` — Top global hotspot clusters and 5-degree latitudinal profiles.
+- `GET /api/analytics/grid-density` — Filtered 2-degree grid cell density for map rendering.
+
+### 10.4 Key Scientific Insights Discovered
+1. **The 4.979x Volume Disparity:** VIIRS detects 18.47M hot spots vs. MODIS's 3.71M, driven by 375m nadir resolution ($7.11\times$ smaller pixel area) and onboard pixel aggregation that curbs scan edge distortion.
+2. **Mean FRP Divergence vs. Total Energy Convergence:** MODIS records a higher mean FRP (41.21 MW vs 9.68 MW) because small fires (&lt;5 MW) remain undetected under 1km pixels. However, total global radiated power is remarkably close (152.8M MW for MODIS vs 178.8M MW for VIIRS, $+17\%$), proving that large fires radiate consistently across sensor footprints.
+3. **Diurnal Overpass Synchronization:** Both sensors detect peak fire activity at 12:00–14:00 UTC (regional afternoon overpass times matching highest ambient temperatures and lowest fuel moisture).
+4. **Flawless Data Integrity:** 22,175,332 out of 22,175,341 observations (&gt;99.9999%) are valid with zero missing coordinates. All 9 invalid records (1 negative FRP, 8 ST duplicates) are preserved for scientific auditing.
+
+---
+
+## 11. Scientific Considerations
 
 FireLens follows these principles:
 
