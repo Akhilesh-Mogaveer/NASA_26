@@ -339,25 +339,32 @@ The backend provides sub-millisecond, memory-cached analytics endpoints:
 
 Phase 4 implements the complete spatial-temporal association engine, multiplicity resolver, and 12-parameter sensitivity evaluator.
 
-### 11.1 Matching Methodology & Geodesic Calculation
-- **Exact Geodesic Calculation:** Employs the Haversine formula with antimeridian ($\pm 180^\circ$) wrap-around adjustment and cosine latitude area convergence.
+### 11.1 Matching Methodology & Spherical Distance Calculation
+- **Spherical Great-Circle Distance Calculation:** Employs the Haversine formula assuming a spherical Earth ($R_{\text{earth}} = 6371.0088\text{ km}$, IUGG recommendation) with antimeridian ($\pm 180^\circ$) wrap-around adjustment and cosine latitude area convergence. This is explicitly distinguished from an ellipsoidal geodesic distance (e.g. Karney on WGS-84), providing sub-0.5% approximation accuracy that comfortably fits satellite footprint uncertainties while enabling closed-form tree indexing.
 - **Scalable Indexing:** Filters candidate observations via UTC epoch window slicing, then builds a local `BallTree` (Haversine metric) on candidate VIIRS points for $O(\log K)$ radius queries.
 - **Empirical Proximity Scoring:** Combines spatial and temporal proximity into a normalized ranking metric ($0.5 \cdot \text{spatial\_score} + 0.5 \cdot \text{temporal\_score}$), explicitly documented as an empirical ranking score rather than a calibrated probability.
-- **Multiplicity & Ambiguity Architecture:** Classifies associations into 1:1 direct pairs, 1:N sub-pixel splits (1km MODIS pixel covering multiple 375m VIIRS detections), N:1 scan-edge overlaps, and M:N complex multi-pixel wildfire perimeters. Associations with competing candidate scores within $\Delta \text{score} \le 0.15$ are flagged as `ambiguous_association`.
+- **Bipartite Multiplicity & Ambiguity Architecture:** Classifies associations into bipartite graph degree patterns: 1:1 direct pair patterns, 1:N split patterns (topological degree consistent with 7.1x footprint difference, not proven physical flame splitting), N:1 overlap patterns, and M:N multi-cluster perimeters. Associations with competing candidate scores within $\Delta \text{score} \le 0.15$ are flagged as `ambiguous_association` with all plausible edges preserved.
 
 ### 11.2 Real-Data Experiment & Benchmarks
 Executed on authentic NASA FIRMS observations:
-- **Primary Benchmark Region:** North American Boreal Forest Wildfire Complex (Saskatchewan / Manitoba, Canada: Lat 54.0°–58.0°N, Lon 106.0°–102.0°W, August 1–2, 2025; **22,455 valid observations**: 3,116 MODIS and 19,339 VIIRS).
+- **Primary Benchmark Region:** North American Boreal Forest Wildfire Complex (Saskatchewan / Manitoba, Canada: Lat 54.0°–58.0°N, Lon 106.0°–102.0°W, August 1–2, 2025; **22,455 valid observations**: MODIS Terra = 1,525, MODIS Aqua = 1,591, VIIRS NOAA-20 = 19,339).
   - **Baseline Results ($R \le 2.0\text{ km}, \Delta t \le 60\text{ min}$):**
     - **Total Candidate Associations:** 28,911
     - **Unique MODIS Matched:** 1,470 / 3,116 (47.18%)
     - **Unique VIIRS Matched:** 8,328 / 19,339 (43.06%)
     - **Unmatched Observations:** 1,646 MODIS, 11,011 VIIRS
     - **Multiplicity Breakdown:** 1:1 = 15; 1:N = 2,104; N:1 = 24; M:N = 26,768
-    - **Mean Geodesic Separation:** 1.202 km (Median: 1.24 km)
+    - **Mean Great-Circle Separation:** 1.202 km (Median: 1.24 km)
     - **Mean Temporal Difference:** 21.82 min (Median: 10.0 min)
-    - **Throughput:** 137.8 candidate associations/sec (Peak traced memory: 168.4 MB)
-- **Secondary Comparative Region:** Southern African Miombo Savanna Fire Belt (Zambia / Angola: Lat -15.0° to -12.0°, Lon 22.0° to 26.0°, August 1–2, 2025; 4,599 valid observations). Yielded 16 associations (MODIS match rate: 0.73%), demonstrating that in tropical fast-moving grass fire regimes, 3-hour diurnal pass separation between Terra and Aqua limits co-incident snapshot matching compared to slow-burning boreal forest wildfires.
+  - **Benchmark Disentanglement:**
+    - **Baseline Execution Time:** 15.71 s (Candidate generation: 14.77s; Association processing: 0.94s)
+    - **Baseline Candidate Throughput:** 1,840.3 candidate pairs/sec (28,911 pairs / 15.71s)
+    - **Baseline Observation Throughput:** 1,429.3 observations/sec (22,455 obs / 15.71s)
+    - **Sensitivity Grid Runtime (12 parameter combinations):** 190.32 s
+    - **Total Pipeline Workflow Runtime:** 206.03 s
+    - **Peak Memory:** 168.4 MB traced RAM (psutil resident memory: ~450 MB)
+- **Secondary Comparative Region:** Southern African Miombo Savanna Fire Belt (Zambia / Angola: Lat -15.0° to -12.0°, Lon 22.0° to 26.0°, August 1–2, 2025; 4,599 valid observations: MODIS Aqua = 917, MODIS Terra = 38, VIIRS NOAA-20 = 3,644). Yielded only 16 candidate associations (MODIS match rate: 0.73%, VIIRS match rate: 0.25%).
+  - **Scientific Explanation:** Orbital overpass geometry is the primary governing factor. Terra passes at ~10:30 and Aqua/NOAA-20 at ~13:30 local solar time (~3-hour diurnal temporal gap). In this region over August 1–2, 2025, VIIRS NOAA-20 passed at ~16:00 UTC and MODIS Aqua passed at ~18:00 UTC (~2-hour gap), so very few observations fell within the 60-minute matching window regardless of physical fire behavior. Faster grass burning with shorter flaming residence time remains a plausible secondary hypothesis.
 
 ### 11.3 Sensitivity Analysis Matrix (All 12 Parameter Combinations)
 

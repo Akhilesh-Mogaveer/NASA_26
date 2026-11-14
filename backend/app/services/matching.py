@@ -135,11 +135,18 @@ def execute_matching_workflow(
         "classification_breakdown": summary_counts["classification_breakdown"],
         "statistics": stats,
         "benchmarks": {
+            "baseline_candidate_generation_seconds": round(t_candidates - t_start, 3),
+            "baseline_association_processing_seconds": round(t_association - t_candidates, 3),
+            "baseline_matching_seconds": round(t_association - t_start, 3),
+            "baseline_candidate_throughput_per_sec": round(len(associations) / max(0.001, t_association - t_start), 1),
+            "baseline_observation_throughput_per_sec": round((len(modis_df) + len(viirs_df)) / max(0.001, t_association - t_start), 1),
+            "sensitivity_grid_evaluation_seconds": round(t_evaluation - t_association, 3),
+            "total_workflow_seconds": round(total_time, 3),
+            # Backwards-compatible aliases:
             "candidate_generation_seconds": round(t_candidates - t_start, 3),
             "association_processing_seconds": round(t_association - t_candidates, 3),
-            "sensitivity_grid_evaluation_seconds": round(t_evaluation - t_association, 3),
             "total_processing_seconds": round(total_time, 3),
-            "associations_per_second": round(len(associations) / max(0.001, total_time), 1),
+            "associations_per_second": round(len(associations) / max(0.001, t_association - t_start), 1),
         },
         "experiment_metadata": experiment_metadata or {},
     }

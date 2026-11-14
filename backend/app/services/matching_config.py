@@ -2,6 +2,20 @@
 
 Defines candidate spatial radii, temporal windows, classification boundaries,
 and data models for MODIS-VIIRS spatial-temporal associations.
+
+NOTE ON DISTANCE METRIC:
+Distances are calculated as spherical great-circle distances via the Haversine formula
+assuming a spherical Earth of mean radius R = 6,371.0088 km (IUGG recommendation).
+This is explicitly distinguished from an ellipsoidal geodesic distance (e.g. Karney
+or Vincenty formulas on the WGS-84 ellipsoid). The spherical great-circle approximation
+differs from ellipsoidal geodesic distance by at most ~0.5% at mid-latitudes, which is
+well within the satellite geolocation uncertainty and pixel footprint dimensions of
+MODIS (1 km nadir, up to 4.8 km scan-edge) and VIIRS (375 m nadir, up to 800 m scan-edge).
+
+NOTE ON MULTIPLICITY PATTERNS:
+Multiplicity patterns ('1:1', '1:N', 'N:1', 'M:N') describe topological degree patterns
+in the bipartite candidate association graph. They do NOT represent confirmed physical
+fire relationships, proven flame splits, or verified perimeter geometries.
 """
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional

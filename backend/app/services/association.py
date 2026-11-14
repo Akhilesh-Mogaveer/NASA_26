@@ -1,8 +1,15 @@
 """Association Processing and Ambiguity Classification for FireLens.
 
 Structures candidate associations, assigns candidate rankings,
-determines multiplicity types (1:1, 1:N, N:1, M:N), identifies
-ambiguous associations, and tracks unmatched observations.
+determines bipartite graph degree patterns (1:1, 1:N, N:1, M:N),
+identifies ambiguous associations, and tracks unmatched observations.
+
+IMPORTANT SCIENTIFIC PRINCIPLE:
+Multiplicity classifications (1:1, 1:N, N:1, M:N) describe graph degree topologies
+in the bipartite candidate graph formed under spatial-temporal proximity thresholds.
+They are NOT confirmed physical fire relationships, proven flame splits, or verified
+contiguous fire perimeters. All plausible candidate edges satisfying threshold criteria
+are preserved without artificial filtering.
 """
 from typing import List, Dict, Any, Set, Tuple
 from collections import defaultdict
@@ -77,15 +84,15 @@ class AssociationProcessor:
                 v_degree = len(viirs_to_candidates[v_id])
                 is_v_ambiguous = v_id in ambiguous_viirs_ids
 
-                # Multiplicity determination
+                # Bipartite graph degree multiplicity determination
                 if m_degree == 1 and v_degree == 1:
-                    multiplicity = "1:1"
+                    multiplicity = "1:1"  # Isolated pair pattern
                 elif m_degree > 1 and v_degree == 1:
-                    multiplicity = "1:N"  # Sub-pixel splitting
+                    multiplicity = "1:N"  # 1 MODIS detection to N VIIRS detections (topological degree pattern)
                 elif m_degree == 1 and v_degree > 1:
-                    multiplicity = "N:1"  # MODIS footprint overlap
+                    multiplicity = "N:1"  # N MODIS detections to 1 VIIRS detection (topological degree pattern)
                 else:
-                    multiplicity = "M:N"  # Complex multi-pixel cluster
+                    multiplicity = "M:N"  # Multi-node bipartite subgraph (degree pattern)
 
                 # Classification determination
                 if is_m_ambiguous or is_v_ambiguous or multiplicity == "M:N":

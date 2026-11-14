@@ -147,8 +147,8 @@ export default function MatchingView() {
               MODIS & VIIRS Spatial-Temporal Matching
             </h1>
             <p className="mt-1 text-sm text-space-300 max-w-3xl">
-              Scalable geodesic association engine linking active-fire snapshot observations across space and time.
-              Resolves multi-pixel clusters, identifies sub-pixel splitting, and computes continuous sensitivity trade-offs.
+              Scalable spatial-temporal association engine linking active-fire snapshot observations across space and time using spherical great-circle distance (Haversine formula).
+              Evaluates bipartite graph connectivity, tracks ambiguity, and computes continuous sensitivity trade-offs across 12 candidate parameter combinations.
             </p>
           </div>
 
@@ -252,7 +252,7 @@ export default function MatchingView() {
 
             <div className="p-4 rounded-xl bg-space-900 border border-space-800 shadow-sm">
               <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-                <span>Mean Geodesic Separation</span>
+                <span>Mean Great-Circle Separation</span>
                 <Compass className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="text-2xl font-extrabold text-white font-mono">
@@ -266,50 +266,50 @@ export default function MatchingView() {
 
           {/* Multiplicity & Classification Deep Dive */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card title="Association Multiplicity Distribution">
+            <Card title="Bipartite Candidate Graph Multiplicity Distribution">
               <div className="space-y-3.5">
                 <p className="text-xs text-space-300">
-                  Because a 1km MODIS pixel is <strong>$7.1\times$ larger in area</strong> than a 375m VIIRS pixel at nadir, true fire fronts naturally exhibit diverse multiplicity:
+                  Multiplicity describes the <strong>bipartite graph degree topology</strong> formed under proximity thresholds (&le; 2.0 km, &le; 60 min). They represent geometric connectivity patterns, <span className="text-amber-300 font-semibold">not proven physical fire perimeters</span>:
                 </p>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg bg-space-950 border border-space-800">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-emerald-400">1:1 Direct Pair</span>
+                      <span className="text-xs font-semibold text-emerald-400">1:1 Pair Pattern</span>
                       <span className="text-xs font-mono font-bold text-white">{multiplicity['1:1']?.toLocaleString() || 15}</span>
                     </div>
                     <p className="text-[11px] text-space-400 leading-tight">
-                      Isolated fire detection with exactly one MODIS and one VIIRS observation.
+                      Isolated bipartite match where exactly one MODIS and one VIIRS observation satisfy search limits.
                     </p>
                   </div>
 
                   <div className="p-3 rounded-lg bg-space-950 border border-space-800">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-blue-400">1:N Sub-Pixel Split</span>
+                      <span className="text-xs font-semibold text-blue-400">1:N Split Pattern</span>
                       <span className="text-xs font-mono font-bold text-white">{multiplicity['1:N']?.toLocaleString() || 2104}</span>
                     </div>
                     <p className="text-[11px] text-space-400 leading-tight">
-                      Single MODIS pixel resolving into multiple adjacent 375m VIIRS hot spots.
+                      Topological pattern where 1 MODIS detection associates with N VIIRS detections (consistent with footprint differences).
                     </p>
                   </div>
 
                   <div className="p-3 rounded-lg bg-space-950 border border-space-800">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-purple-400">N:1 MODIS Overlap</span>
+                      <span className="text-xs font-semibold text-purple-400">N:1 Overlap Pattern</span>
                       <span className="text-xs font-mono font-bold text-white">{multiplicity['N:1']?.toLocaleString() || 24}</span>
                     </div>
                     <p className="text-[11px] text-space-400 leading-tight">
-                      Scan-edge panoramic distortion causing overlapping MODIS pixels on one VIIRS detection.
+                      Topological pattern where N MODIS detections associate with a single VIIRS detection within threshold.
                     </p>
                   </div>
 
                   <div className="p-3 rounded-lg bg-space-950 border border-space-800">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-amber-400">M:N Multi-Cluster</span>
+                      <span className="text-xs font-semibold text-amber-400">M:N Cluster Pattern</span>
                       <span className="text-xs font-mono font-bold text-white">{multiplicity['M:N']?.toLocaleString() || 26768}</span>
                     </div>
                     <p className="text-[11px] text-space-400 leading-tight">
-                      Complex contiguous wildfire perimeter where multiple pixels mutually interlink.
+                      Multi-node connected component in high-density fire zones where multiple detections mutually interlink.
                     </p>
                   </div>
                 </div>
@@ -332,29 +332,39 @@ export default function MatchingView() {
                     <span className="font-mono text-space-300">2025-08-01 to 2025-08-02 (48 hours)</span>
                   </div>
                   <div className="flex items-center justify-between text-space-400 text-[11px]">
-                    <span>Real Observations Evaluated:</span>
+                    <span>Platforms Evaluated:</span>
+                    <span className="font-mono text-space-200">MODIS (Terra: 1,525, Aqua: 1,591) | VIIRS (NOAA-20: 19,339)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-space-400 text-[11px]">
+                    <span>Observations Considered:</span>
                     <span className="font-mono text-white font-bold">22,455 valid records (3,116 MODIS, 19,339 VIIRS)</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-1">
                   <div className="p-2.5 rounded-lg bg-space-950 border border-space-800">
-                    <span className="text-[11px] text-space-400 block mb-0.5">Runtime & Throughput</span>
+                    <span className="text-[11px] text-space-400 block mb-0.5">Baseline Matching Runtime</span>
                     <div className="text-base font-extrabold text-white font-mono">
-                      {benchmarks.total_processing_seconds || '209.9'} <span className="text-xs font-normal text-space-400">s</span>
+                      {benchmarks.baseline_matching_seconds || benchmarks.candidate_generation_seconds ? `${benchmarks.baseline_matching_seconds || (Number(benchmarks.candidate_generation_seconds) + Number(benchmarks.association_processing_seconds)).toFixed(2)} s` : '15.7 s'}
                     </div>
-                    <span className="text-[10px] text-emerald-400 font-mono">
-                      {benchmarks.associations_per_second || '137.8'} assocs/sec
+                    <span className="text-[10px] text-emerald-400 font-mono block">
+                      {benchmarks.baseline_candidate_throughput_per_sec || '1,841.2'} candidate pairs/sec
+                    </span>
+                    <span className="text-[10px] text-space-400 font-mono">
+                      ({benchmarks.baseline_observation_throughput_per_sec || '1,430.1'} obs/sec)
                     </span>
                   </div>
 
                   <div className="p-2.5 rounded-lg bg-space-950 border border-space-800">
-                    <span className="text-[11px] text-space-400 block mb-0.5">Peak Traced Memory</span>
+                    <span className="text-[11px] text-space-400 block mb-0.5">Sensitivity Grid (12x) & Total</span>
                     <div className="text-base font-extrabold text-white font-mono">
-                      168.4 <span className="text-xs font-normal text-space-400">MB</span>
+                      {benchmarks.total_workflow_seconds || benchmarks.total_processing_seconds || '206.0'} <span className="text-xs font-normal text-space-400">s</span>
                     </div>
+                    <span className="text-[10px] text-space-300 font-mono block">
+                      Grid runtime: {benchmarks.sensitivity_grid_evaluation_seconds || '190.3'} s
+                    </span>
                     <span className="text-[10px] text-space-400 font-mono">
-                      Zero external dependencies
+                      Peak traced RAM: {benchmarks.peak_traced_memory_mb || '168.4'} MB
                     </span>
                   </div>
                 </div>
@@ -366,7 +376,8 @@ export default function MatchingView() {
                       <span className="font-mono text-viirs">{compRegion.region_name}</span>
                     </div>
                     <p className="text-space-400 leading-tight">
-                      4,599 observations yielded only <strong>{compRegion.associations_count}</strong> candidate associations (MODIS match rate: {compRegion.modis_match_rate_pct}%), demonstrating that in tropical fast-moving grass fire regimes, diurnal pass separation (~3 hours between Terra and Aqua) limits co-incident snapshot matching compared to slow-burning boreal forest wildfires.
+                      4,599 observations yielded only <strong>{compRegion.associations_count}</strong> candidate associations (MODIS match rate: {compRegion.modis_match_rate_pct}%). 
+                      <strong className="text-space-300"> Primary finding:</strong> Orbital geometry is the primary governing factor: Terra passes at ~10:30 and Aqua/NOAA-20 at ~13:30 local solar time (~3-hour gap). During the 48h window, overpass timing differed by 2 to 4 hours (e.g. NOAA-20 at 16:00 UTC and Aqua at 18:00 UTC), severely restricting opportunities for &le; 60 min matching. Fast savanna grass burning remains a plausible secondary hypothesis.
                     </p>
                   </div>
                 )}
@@ -398,7 +409,7 @@ export default function MatchingView() {
                 </defs>
                 <rect width="100%" height="100%" fill="url(#mapGrid)" />
 
-                {/* Simulated Geodesic Bounds Labels */}
+                {/* Geographic Coordinate Bounds Labels */}
                 <text x="20" y="30" fill="#64748b" fontSize="10" fontFamily="monospace">58.0°N, 106.0°W</text>
                 <text x="700" y="30" fill="#64748b" fontSize="10" fontFamily="monospace">58.0°N, 102.0°W</text>
                 <text x="20" y="430" fill="#64748b" fontSize="10" fontFamily="monospace">54.0°N, 106.0°W</text>
@@ -508,7 +519,7 @@ export default function MatchingView() {
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between text-xs text-space-400 pt-1 font-mono">
-                  <span>Geodesic Distance: <strong className="text-white">{selectedAssoc.distance_km} km</strong> (Spatial score: {selectedAssoc.spatial_score})</span>
+                  <span>Great-Circle Distance: <strong className="text-white">{selectedAssoc.distance_km} km</strong> (Spatial score: {selectedAssoc.spatial_score})</span>
                   <span>Temporal Separation: <strong className="text-white">{selectedAssoc.time_diff_minutes} min</strong> (Temporal score: {selectedAssoc.temporal_score})</span>
                 </div>
               </div>

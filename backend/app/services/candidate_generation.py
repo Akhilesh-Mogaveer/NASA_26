@@ -1,8 +1,11 @@
 """Spatial-Temporal Candidate Generation Engine for FireLens.
 
-Implements geodesic distance calculations, time-window filtering,
-spatial indexing via BallTree (Haversine metric), and heuristic scoring
-for MODIS and VIIRS active-fire observations.
+Implements spherical great-circle distance calculations (Haversine formula),
+time-window filtering, spatial indexing via BallTree (Haversine metric in radians),
+and heuristic proximity scoring for MODIS and VIIRS active-fire observations.
+
+NOTE: Great-circle distance assumes a spherical Earth (R = 6371.0088 km) and is
+explicitly distinguished from an ellipsoidal geodesic distance (e.g., Karney on WGS-84).
 """
 import math
 from typing import List, Dict, Any, Tuple, Optional

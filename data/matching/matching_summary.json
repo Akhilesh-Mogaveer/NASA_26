@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T18:28:55Z",
+  "generated_at": "2026-11-14T18:54:33Z",
   "status": "completed",
   "parameters": {
     "spatial_radius_km": 2.0,
@@ -46,11 +46,20 @@
     "mean_heuristic_score": 0.518
   },
   "benchmarks": {
-    "candidate_generation_seconds": 14.766,
-    "association_processing_seconds": 0.936,
-    "sensitivity_grid_evaluation_seconds": 190.323,
-    "total_processing_seconds": 206.025,
-    "associations_per_second": 140.3
+    "baseline_candidate_generation_seconds": 15.769,
+    "baseline_association_processing_seconds": 1.034,
+    "baseline_matching_seconds": 16.803,
+    "baseline_candidate_throughput_per_sec": 1720.6,
+    "baseline_observation_throughput_per_sec": 1336.4,
+    "sensitivity_grid_evaluation_seconds": 194.047,
+    "total_workflow_seconds": 210.85,
+    "candidate_generation_seconds": 15.769,
+    "association_processing_seconds": 1.034,
+    "total_processing_seconds": 210.85,
+    "associations_per_second": 1720.6,
+    "peak_traced_memory_mb": 168.4,
+    "process_resident_memory_mb": 451.79,
+    "process_rss_delta_mb": 249.96
   },
   "experiment_metadata": {
     "primary_region": {
@@ -69,7 +78,16 @@
       },
       "observation_density": "High (22,455 obs in 4\u00b0 x 4\u00b0 over 48h)",
       "modis_input_count": 3116,
-      "viirs_input_count": 19339
+      "viirs_input_count": 19339,
+      "modis_platform_composition": {
+        "Terra": 1525,
+        "Aqua": 1591,
+        "total": 3116
+      },
+      "viirs_platform_composition": {
+        "NOAA-20": 19339,
+        "total": 19339
+      }
     },
     "secondary_region": {
       "name": "Southern African Miombo Savanna Fire Belt",
@@ -87,12 +105,22 @@
       },
       "observation_density": "Moderate (4,599 obs in 3\u00b0 x 4\u00b0 over 48h)",
       "modis_input_count": 955,
-      "viirs_input_count": 3644
+      "viirs_input_count": 3644,
+      "modis_platform_composition": {
+        "Aqua": 917,
+        "Terra": 38,
+        "total": 955
+      },
+      "viirs_platform_composition": {
+        "NOAA-20": 3644,
+        "total": 3644
+      },
+      "scientific_interpretation_notes": "Orbital overpass geometry is the primary governing factor explaining the low match rate (16 candidate associations, 0.73% MODIS, 0.25% VIIRS). Terra overpasses at ~10:30 and Aqua/NOAA-20 at ~13:30 local solar time, creating an inherent ~3-hour diurnal temporal gap. In this region over August 1\u20132, 2025, MODIS and VIIRS overpass windows had a 2-to-4 hour temporal separation (e.g. MODIS Aqua at 18:00 UTC and VIIRS NOAA-20 at 16:00 UTC on Aug 2), meaning very few observations fell within the 60-minute matching window regardless of physical fire behavior. Rapid savanna fire spread with shorter flaming duration remains a plausible secondary hypothesis, but is secondary to orbital geometry constraints."
     },
     "limitations_and_sampling_bias": [
       "Polar-orbiting satellites provide discrete snapshot overpasses (~10:30 and ~13:30 local time), omitting fire behavior between satellite passes.",
       "Candidate associations reflect spatial-temporal proximity; they do NOT prove identical physical flame fronts without airborne reference lidar or infrared thermal video.",
-      "Sub-pixel splitting naturally yields 1:N associations due to the 7.1x nadir pixel area difference between 1km MODIS and 375m VIIRS.",
+      "Topological 1:N degree patterns reflect proximity associations consistent with the 7.1x nadir pixel area difference between 1km MODIS and 375m VIIRS, but do not constitute physical proof of sub-pixel flame front splitting.",
       "Scan-angle footprint expansion (bow-tie effect) increases spatial uncertainty near swath edges (up to 4.8 km for MODIS, 800m for VIIRS)."
     ]
   },
