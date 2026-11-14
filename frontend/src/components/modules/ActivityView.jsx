@@ -197,6 +197,9 @@ export default function ActivityView() {
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
+              <div className="p-2.5 mt-2 rounded bg-space-950 border border-space-800 text-[11px] text-space-400">
+                <strong className="text-space-300">Methodological Note:</strong> This global UTC distribution aggregates sun-synchronous orbital tracks across all longitudes. Peaks at 12:00–14:00 UTC correspond to orbital passes over high-density fire zones in Africa and Eurasia, rather than a single site&apos;s diurnal cycle. Local solar time analysis requires longitude-based solar angle transformation.
+              </div>
             </Card>
 
             {/* Day / Night Breakdown Card */}

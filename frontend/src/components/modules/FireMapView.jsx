@@ -282,7 +282,7 @@ export default function FireMapView() {
                     <th className="py-2.5 px-3 text-viirs">VIIRS</th>
                     <th className="py-2.5 px-3 text-white">Total Fires</th>
                     <th className="py-2.5 px-3 text-amber-400">Mean FRP</th>
-                    <th className="py-2.5 px-3 font-sans">Dominant Region</th>
+                    <th className="py-2.5 px-3 font-sans">Geographic Locus (2° Cell Bounds)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-space-800/60">
@@ -294,10 +294,8 @@ export default function FireMapView() {
                       <td className="py-2 px-3 text-viirs">{hotspot.viirs_count.toLocaleString()}</td>
                       <td className="py-2 px-3 font-bold text-white">{hotspot.total_count.toLocaleString()}</td>
                       <td className="py-2 px-3 text-amber-400">{hotspot.mean_frp} MW</td>
-                      <td className="py-2 px-3 font-sans text-space-300">
-                        {hotspot.lat_bin < 0 && hotspot.lon_bin > 10 && hotspot.lon_bin < 35 ? 'Central Africa' :
-                         hotspot.lat_bin < 0 && hotspot.lon_bin < -40 ? 'South America (Cerrado)' :
-                         hotspot.lat_bin > 0 && hotspot.lon_bin > 90 ? 'Southeast Asia' : 'Continental Hotspot'}
+                      <td className="py-2 px-3 font-sans text-space-300 text-[11px]">
+                        [{hotspot.lat_bin}°, {hotspot.lat_bin + 2}°] Lat, [{hotspot.lon_bin}°, {hotspot.lon_bin + 2}°] Lon
                       </td>
                     </tr>
                   ))}

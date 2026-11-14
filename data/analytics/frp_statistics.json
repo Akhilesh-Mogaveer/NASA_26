@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T15:28:26Z",
+  "generated_at": "2026-11-14T17:10:54Z",
   "overall": {
     "min": 0.0,
     "max": 11247.1,
@@ -10,8 +10,8 @@
     "q75": 12.68,
     "q95": 50.19,
     "q99": 149.2,
-    "total_mw": 331667586.65,
-    "count": 22175340
+    "total_mw": 331667522.71,
+    "count": 22175332
   },
   "modis": {
     "min": 0.0,
@@ -36,30 +36,30 @@
     "q75": 9.45,
     "q95": 30.75,
     "q99": 88.62,
-    "total_mw": 178844880.85,
-    "count": 18466569
+    "total_mw": 178844816.91,
+    "count": 18466561
   },
   "histogram": [
     {
       "bin_label": "0-5",
       "bin_order": 1,
       "modis_count": 84755.0,
-      "viirs_count": 9148369.0,
-      "total_count": 9233124
+      "viirs_count": 9148367.0,
+      "total_count": 9233122
     },
     {
       "bin_label": "5-10",
       "bin_order": 2,
       "modis_count": 821331.0,
-      "viirs_count": 5021805.0,
-      "total_count": 5843136
+      "viirs_count": 5021802.0,
+      "total_count": 5843133
     },
     {
       "bin_label": "10-25",
       "bin_order": 3,
       "modis_count": 1416741.0,
-      "viirs_count": 3060078.0,
-      "total_count": 4476819
+      "viirs_count": 3060075.0,
+      "total_count": 4476816
     },
     {
       "bin_label": "25-50",

@@ -135,11 +135,11 @@ export default function ComparisonView() {
                     </td>
                   </tr>
                   <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Integrated Total Energy (2025)</td>
+                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Sum of Reported FRP (2025)</td>
                     <td className="py-2.5 px-4 text-space-200">{(frpComp.modis_total_mw / 1e6).toFixed(1)}M MW</td>
                     <td className="py-2.5 px-4 text-space-200">{(frpComp.viirs_total_mw / 1e6).toFixed(1)}M MW</td>
-                    <td className="py-2.5 px-4 font-sans text-emerald-400 font-semibold">
-                      Total energy remarkably close (+17% difference)
+                    <td className="py-2.5 px-4 font-sans text-space-300">
+                      Snapshot power sum (MW); does <strong className="text-amber-400">not</strong> represent total radiated energy (FRE in MJ)
                     </td>
                   </tr>
                   <tr className="hover:bg-space-900/40">
@@ -195,30 +195,30 @@ export default function ComparisonView() {
           {/* Harmonized Confidence Levels and Physical Divergence */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Confidence Breakdown */}
-            <Card title="Harmonized Confidence Breakdown" subtitle="Standardized Low / Nominal / High levels">
+            <Card title="Separate Sensor Confidence Distributions" subtitle="Preserving native conventions with exploratory binning">
               <div className="space-y-4 pt-2">
                 <div>
                   <div className="flex justify-between text-xs font-medium mb-1.5">
-                    <span className="text-modis font-semibold">MODIS C6.1 Categories</span>
-                    <span className="font-mono text-space-400">Continuous 0-100% mapped</span>
+                    <span className="text-modis font-semibold">MODIS C6.1 (Continuous 0–100%)</span>
+                    <span className="font-mono text-[10px] text-amber-400 font-sans">Analyst-Defined Bins</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 font-mono text-xs text-center">
                     <div className="p-2.5 rounded bg-space-900 border border-space-800">
                       <span className="text-space-400 block text-[10px] uppercase font-sans">Low (&lt;30%)</span>
                       <span className="font-bold text-space-200">
-                        {confDist.modis?.category_percentages?.low || 12.3}%
+                        {confDist.modis?.category_percentages?.low || 4.96}%
                       </span>
                     </div>
                     <div className="p-2.5 rounded bg-space-900 border border-space-800">
                       <span className="text-accent-blue block text-[10px] uppercase font-sans">Nominal (30-79%)</span>
                       <span className="font-bold text-space-200">
-                        {confDist.modis?.category_percentages?.nominal || 63.8}%
+                        {confDist.modis?.category_percentages?.nominal || 67.80}%
                       </span>
                     </div>
                     <div className="p-2.5 rounded bg-space-900 border border-space-800">
                       <span className="text-emerald-400 block text-[10px] uppercase font-sans">High (&ge;80%)</span>
                       <span className="font-bold text-space-200">
-                        {confDist.modis?.category_percentages?.high || 23.9}%
+                        {confDist.modis?.category_percentages?.high || 27.24}%
                       </span>
                     </div>
                   </div>
@@ -226,54 +226,58 @@ export default function ComparisonView() {
 
                 <div>
                   <div className="flex justify-between text-xs font-medium mb-1.5">
-                    <span className="text-viirs font-semibold">VIIRS C2 Categories</span>
-                    <span className="font-mono text-space-400">Native flags (l, n, h)</span>
+                    <span className="text-viirs font-semibold">VIIRS C2 Native Flags</span>
+                    <span className="font-mono text-[10px] text-emerald-400 font-sans">Categorical Output</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 font-mono text-xs text-center">
                     <div className="p-2.5 rounded bg-space-900 border border-space-800">
                       <span className="text-space-400 block text-[10px] uppercase font-sans">Low (&apos;l&apos;)</span>
                       <span className="font-bold text-space-200">
-                        {confDist.viirs?.category_percentages?.low || 16.5}%
+                        {confDist.viirs?.category_percentages?.low || 12.02}%
                       </span>
                     </div>
                     <div className="p-2.5 rounded bg-space-900 border border-space-800">
                       <span className="text-accent-blue block text-[10px] uppercase font-sans">Nominal (&apos;n&apos;)</span>
                       <span className="font-bold text-space-200">
-                        {confDist.viirs?.category_percentages?.nominal || 72.1}%
+                        {confDist.viirs?.category_percentages?.nominal || 82.96}%
                       </span>
                     </div>
                     <div className="p-2.5 rounded bg-space-900 border border-space-800">
                       <span className="text-emerald-400 block text-[10px] uppercase font-sans">High (&apos;h&apos;)</span>
                       <span className="font-bold text-space-200">
-                        {confDist.viirs?.category_percentages?.high || 11.4}%
+                        {confDist.viirs?.category_percentages?.high || 5.02}%
                       </span>
                     </div>
                   </div>
                 </div>
+
+                <div className="p-2.5 rounded bg-space-950 border border-space-800 text-[11px] text-space-400 leading-relaxed">
+                  <strong className="text-space-200">Methodological Note:</strong> MODIS numeric confidence (0–100%) and VIIRS categorical flags are separate algorithmic conventions. They cannot be equated as direct physical equivalents.
+                </div>
               </div>
             </Card>
 
-            {/* Principles for Phase 4 Harmonization */}
-            <Card title="Design Foundation for Phase 4 Harmonization" subtitle="Architectural rules derived from EDA">
+            {/* Candidate Starting Hypotheses for Phase 4 Harmonization */}
+            <Card title="Candidate Starting Hypotheses for Phase 4" subtitle="Parameters to be systematically tested and evaluated">
               <div className="space-y-3 text-xs leading-relaxed text-space-300">
                 <div className="p-2.5 rounded-lg bg-space-900/80 border border-space-800">
-                  <span className="font-semibold text-white block mb-0.5">1. Adaptive Spatial Search Radius</span>
+                  <span className="font-semibold text-white block mb-0.5">1. Candidate Spatial Search Radius (1.25 – 3.5 km)</span>
                   <span className="text-space-400 text-[11px]">
-                    Pixel footprint expands away from nadir. Search radius adapts between <strong>1.25 km (nadir)</strong> and <strong>3.5 km (scan edge)</strong> based on scan angle.
+                    Hypothesis based on footprint geometry. Phase 4 will systematically evaluate alternative thresholds against false matches and spatial commission errors.
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-space-900/80 border border-space-800">
-                  <span className="font-semibold text-white block mb-0.5">2. Many-to-One (N:1) Association</span>
+                  <span className="font-semibold text-white block mb-0.5">2. Candidate Many-to-One (N:1) Association</span>
                   <span className="text-space-400 text-[11px]">
-                    Because VIIRS pixels are 7x smaller, multiple VIIRS hot spots correspond to a single physical MODIS detection. VIIRS clusters are aggregated rather than 1:1 mapped.
+                    Because VIIRS pixels are 7x smaller, multiple VIIRS hot spots may overlap a single MODIS footprint. Phase 4 will evaluate cluster aggregation vs. nearest-neighbor matching.
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-lg bg-space-900/80 border border-space-800">
-                  <span className="font-semibold text-white block mb-0.5">3. Temporal Window Gating (&Delta;t &le; 90 min)</span>
+                  <span className="font-semibold text-white block mb-0.5">3. Candidate Temporal Window Gating (&Delta;t &le; 90 min)</span>
                   <span className="text-space-400 text-[11px]">
-                    Separates true simultaneous observations (Aqua &amp; NOAA-20 13:30 pass) from diurnal fire propagation across passes.
+                    Candidate window to evaluate true near-simultaneous observations (Aqua vs NOAA-20) while accounting for orbital drift and fire diurnal progression.
                   </span>
                 </div>
               </div>

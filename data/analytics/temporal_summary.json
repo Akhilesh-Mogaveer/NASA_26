@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T15:28:05Z",
+  "generated_at": "2026-11-14T17:10:32Z",
   "monthly": [
     {
       "month": "2025-01",
@@ -15,13 +15,13 @@
     {
       "month": "2025-02",
       "modis_count": 254019.0,
-      "viirs_count": 1372813.0,
-      "total_count": 1626832,
+      "viirs_count": 1372812.0,
+      "total_count": 1626831,
       "modis_mean_frp": 33.55,
       "viirs_mean_frp": 7.99,
       "modis_total_frp": 8521278.4,
-      "viirs_total_frp": 10973480.0,
-      "total_frp": 19494758.4
+      "viirs_total_frp": 10973471.31,
+      "total_frp": 19494749.71
     },
     {
       "month": "2025-03",
@@ -59,68 +59,68 @@
     {
       "month": "2025-06",
       "modis_count": 264457.0,
-      "viirs_count": 1222243.0,
-      "total_count": 1486700,
+      "viirs_count": 1222242.0,
+      "total_count": 1486699,
       "modis_mean_frp": 44.59,
       "viirs_mean_frp": 10.14,
       "modis_total_frp": 11791873.3,
-      "viirs_total_frp": 12387526.11,
-      "total_frp": 24179399.41
+      "viirs_total_frp": 12387520.73,
+      "total_frp": 24179394.03
     },
     {
       "month": "2025-07",
       "modis_count": 423815.0,
-      "viirs_count": 1888637.0,
-      "total_count": 2312452,
+      "viirs_count": 1888634.0,
+      "total_count": 2312449,
       "modis_mean_frp": 48.71,
       "viirs_mean_frp": 11.23,
       "modis_total_frp": 20644687.2,
-      "viirs_total_frp": 21209947.96,
-      "total_frp": 41854635.16
+      "viirs_total_frp": 21209923.36,
+      "total_frp": 41854610.56
     },
     {
       "month": "2025-08",
-      "modis_count": 558685.0,
+      "modis_count": 558684.0,
       "viirs_count": 2623955.0,
-      "total_count": 3182640,
+      "total_count": 3182639,
       "modis_mean_frp": 45.98,
       "viirs_mean_frp": 11.0,
-      "modis_total_frp": 25689707.7,
+      "modis_total_frp": 25689713.6,
       "viirs_total_frp": 28864491.16,
-      "total_frp": 54554198.86
+      "total_frp": 54554204.76
     },
     {
       "month": "2025-09",
       "modis_count": 398557.0,
-      "viirs_count": 2033813.0,
-      "total_count": 2432370,
+      "viirs_count": 2033812.0,
+      "total_count": 2432369,
       "modis_mean_frp": 41.46,
       "viirs_mean_frp": 10.2,
       "modis_total_frp": 16523009.0,
-      "viirs_total_frp": 20747163.25,
-      "total_frp": 37270172.25
+      "viirs_total_frp": 20747159.27,
+      "total_frp": 37270168.27
     },
     {
       "month": "2025-10",
       "modis_count": 318740.0,
-      "viirs_count": 1690540.0,
-      "total_count": 2009280,
+      "viirs_count": 1690539.0,
+      "total_count": 2009279,
       "modis_mean_frp": 43.24,
       "viirs_mean_frp": 10.28,
       "modis_total_frp": 13782505.5,
-      "viirs_total_frp": 17382627.4,
-      "total_frp": 31165132.9
+      "viirs_total_frp": 17382617.08,
+      "total_frp": 31165122.58
     },
     {
       "month": "2025-11",
       "modis_count": 215110.0,
-      "viirs_count": 1146914.0,
-      "total_count": 1362024,
+      "viirs_count": 1146913.0,
+      "total_count": 1362023,
       "modis_mean_frp": 35.1,
       "viirs_mean_frp": 8.44,
       "modis_total_frp": 7549301.0,
-      "viirs_total_frp": 9678364.6,
-      "total_frp": 17227665.6
+      "viirs_total_frp": 9678353.63,
+      "total_frp": 17227654.63
     },
     {
       "month": "2025-12",
@@ -162,14 +162,14 @@
     {
       "hour_utc": 4,
       "modis_count": 61728.0,
-      "viirs_count": 802142.0,
-      "total_count": 863870
+      "viirs_count": 802141.0,
+      "total_count": 863869
     },
     {
       "hour_utc": 5,
       "modis_count": 118467.0,
-      "viirs_count": 688479.0,
-      "total_count": 806946
+      "viirs_count": 688478.0,
+      "total_count": 806945
     },
     {
       "hour_utc": 6,
@@ -198,8 +198,8 @@
     {
       "hour_utc": 10,
       "modis_count": 47075.0,
-      "viirs_count": 1354338.0,
-      "total_count": 1401413
+      "viirs_count": 1354337.0,
+      "total_count": 1401412
     },
     {
       "hour_utc": 11,
@@ -210,14 +210,14 @@
     {
       "hour_utc": 12,
       "modis_count": 581249.0,
-      "viirs_count": 2852895.0,
-      "total_count": 3434144
+      "viirs_count": 2852894.0,
+      "total_count": 3434143
     },
     {
       "hour_utc": 13,
       "modis_count": 792392.0,
-      "viirs_count": 821582.0,
-      "total_count": 1613974
+      "viirs_count": 821581.0,
+      "total_count": 1613973
     },
     {
       "hour_utc": 14,
@@ -234,8 +234,8 @@
     {
       "hour_utc": 16,
       "modis_count": 41573.0,
-      "viirs_count": 559013.0,
-      "total_count": 600586
+      "viirs_count": 559011.0,
+      "total_count": 600584
     },
     {
       "hour_utc": 17,
@@ -246,8 +246,8 @@
     {
       "hour_utc": 18,
       "modis_count": 167818.0,
-      "viirs_count": 724055.0,
-      "total_count": 891873
+      "viirs_count": 724054.0,
+      "total_count": 891872
     },
     {
       "hour_utc": 19,
@@ -263,9 +263,9 @@
     },
     {
       "hour_utc": 21,
-      "modis_count": 63630.0,
+      "modis_count": 63629.0,
       "viirs_count": 275218.0,
-      "total_count": 338848
+      "total_count": 338847
     },
     {
       "hour_utc": 22,
@@ -285,43 +285,43 @@
       "day_name": "Sunday",
       "dow_index": 0,
       "modis_count": 480043.0,
-      "viirs_count": 2386548.0,
-      "total_count": 2866591
+      "viirs_count": 2386547.0,
+      "total_count": 2866590
     },
     {
       "day_name": "Monday",
       "dow_index": 1,
       "modis_count": 524173.0,
-      "viirs_count": 2623223.0,
-      "total_count": 3147396
+      "viirs_count": 2623222.0,
+      "total_count": 3147395
     },
     {
       "day_name": "Tuesday",
       "dow_index": 2,
       "modis_count": 549423.0,
-      "viirs_count": 2696456.0,
-      "total_count": 3245879
+      "viirs_count": 2696454.0,
+      "total_count": 3245877
     },
     {
       "day_name": "Wednesday",
       "dow_index": 3,
       "modis_count": 548017.0,
-      "viirs_count": 2724642.0,
-      "total_count": 3272659
+      "viirs_count": 2724640.0,
+      "total_count": 3272657
     },
     {
       "day_name": "Thursday",
       "dow_index": 4,
       "modis_count": 539656.0,
-      "viirs_count": 2729097.0,
-      "total_count": 3268753
+      "viirs_count": 2729095.0,
+      "total_count": 3268751
     },
     {
       "day_name": "Friday",
       "dow_index": 5,
-      "modis_count": 530032.0,
+      "modis_count": 530031.0,
       "viirs_count": 2625474.0,
-      "total_count": 3155506
+      "total_count": 3155505
     },
     {
       "day_name": "Saturday",
@@ -333,14 +333,14 @@
   ],
   "day_night": {
     "modis": {
-      "day_count": 3125299,
+      "day_count": 3125298,
       "night_count": 583473,
       "day_percentage": 84.27,
       "night_percentage": 15.73
     },
     "viirs": {
-      "day_count": 13710691,
-      "night_count": 4755878,
+      "day_count": 13710684,
+      "night_count": 4755877,
       "day_percentage": 74.25,
       "night_percentage": 25.75
     }

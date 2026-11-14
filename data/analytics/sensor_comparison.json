@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-14T15:28:31Z",
+  "generated_at": "2026-11-14T17:10:54Z",
   "observations": {
     "modis_count": 3708771,
-    "viirs_count": 18466569,
-    "total_count": 22175340,
+    "viirs_count": 18466561,
+    "total_count": 22175332,
     "viirs_to_modis_ratio": 4.979,
     "modis_percentage": 16.72,
     "viirs_percentage": 83.28
@@ -20,47 +20,28 @@
     "modis_median_mw": 17.9,
     "viirs_median_mw": 5.05,
     "modis_total_mw": 152822705.8,
-    "viirs_total_mw": 178844880.85,
+    "viirs_total_mw": 178844816.91,
     "total_frp_ratio_viirs_to_modis": 1.17
   },
   "confidence_distribution": {
     "modis": {
       "type": "numeric_percentage_0_100",
-      "categories": {
-        "low": 183897,
-        "nominal": 2514424,
-        "high": 1010451
-      },
-      "category_percentages": {
-        "low": 4.96,
-        "nominal": 67.8,
-        "high": 27.24
-      }
+      "analyst_defined_bins_disclaimer": "Analyst-defined exploratory categories, not equivalent to VIIRS flags"
     },
     "viirs": {
-      "type": "categorical_flags_l_n_h",
-      "categories": {
-        "nominal": 15319520,
-        "low": 2220253,
-        "high": 926796
-      },
-      "category_percentages": {
-        "nominal": 82.96,
-        "low": 12.02,
-        "high": 5.02
-      }
+      "type": "categorical_flags_l_n_h"
     }
   },
   "day_night_comparison": {
     "modis": {
-      "day_count": 3125299,
+      "day_count": 3125298,
       "night_count": 583473,
       "day_percentage": 84.27,
       "night_percentage": 15.73
     },
     "viirs": {
-      "day_count": 13710691,
-      "night_count": 4755878,
+      "day_count": 13710684,
+      "night_count": 4755877,
       "day_percentage": 74.25,
       "night_percentage": 25.75
     }
@@ -72,22 +53,19 @@
         "Aqua"
       ],
       "equator_crossing_terra": "10:30 Descending / 22:30 Ascending",
-      "equator_crossing_aqua": "13:30 Ascending / 01:30 Descending",
-      "swath_width_km": 2330
+      "equator_crossing_aqua": "13:30 Ascending / 01:30 Descending"
     },
     "viirs": {
       "platforms": [
         "NOAA-20 (JPSS-1)"
       ],
-      "equator_crossing": "13:30 Ascending / 01:30 Descending",
-      "swath_width_km": 3040,
-      "feature": "Constrained pixel growth at scan edge (375m nadir to ~800m scan edge vs MODIS 1km to ~5km)"
+      "equator_crossing": "13:30 Ascending / 01:30 Descending"
     }
   },
   "scientific_reasons_for_divergence": [
     "Spatial resolution advantage (375m vs 1000m): VIIRS resolves sub-pixel fires that MODIS misses due to thermal dilution in 1km\u00b2 pixels.",
-    "Edge-of-scan pixel geometry: VIIRS implements pixel aggregation (3:1, 2:1, 1:1) limiting pixel area growth to a factor of ~4 at the scan edge, whereas MODIS pixels expand up to 10-fold near the swath edge (bow-tie effect).",
-    "Swath width difference: VIIRS 3040 km swath leaves no orbital gaps between passes at equatorial latitudes, whereas MODIS 2330 km swath has equatorial inter-orbit gaps.",
-    "Detection threshold: Minimum detectable FRP for VIIRS 375m is ~0.5-1.0 MW compared to ~8-10 MW for MODIS C6.1."
+    "Edge-of-scan pixel geometry: VIIRS pixel aggregation constrains pixel growth to ~4x vs MODIS ~10x expansion.",
+    "Swath width difference: VIIRS 3040 km swath leaves no equatorial gaps, while MODIS has orbital gaps.",
+    "Detection threshold: Minimum detectable FRP for VIIRS is ~0.5-1.0 MW compared to ~8-10 MW for MODIS."
   ]
 }

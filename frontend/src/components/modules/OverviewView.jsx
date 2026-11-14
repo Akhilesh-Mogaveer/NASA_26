@@ -136,15 +136,15 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
 
         <div className="p-4 rounded-xl bg-space-900/80 border border-space-750 shadow-sm">
           <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-            <span>Total Radiated Power</span>
+            <span>Sum of Reported FRP</span>
             <Activity className="w-4 h-4 text-accent-blue" />
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
             {(totalFRP / 1e6).toFixed(1)}M <span className="text-xs font-normal text-space-400">MW</span>
           </div>
           <div className="text-[11px] text-space-400 mt-1 flex items-center justify-between">
-            <span>Mean FRP:</span>
-            <span className="font-mono text-space-200">{meanFRP.toFixed(2)} MW</span>
+            <span>Snapshot Sum (MW)</span>
+            <span className="font-mono text-space-200">Mean: {meanFRP.toFixed(2)} MW</span>
           </div>
         </div>
       </div>
