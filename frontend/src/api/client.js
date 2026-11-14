@@ -51,4 +51,64 @@ export async function getRootInfo() {
   }
 }
 
+/**
+ * Trigger data ingestion and validation pipeline
+ */
+export async function triggerDataIngest() {
+  try {
+    const response = await apiClient.post('/api/data/ingest');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Ingestion failed',
+    };
+  }
+}
+
+/**
+ * Get data processing pipeline status
+ */
+export async function getDataStatus() {
+  try {
+    const response = await apiClient.get('/api/data/status');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch status',
+    };
+  }
+}
+
+/**
+ * Get latest data quality report
+ */
+export async function getDataQualityReport() {
+  try {
+    const response = await apiClient.get('/api/data/quality');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch quality report',
+    };
+  }
+}
+
+/**
+ * Preview normalized fire observations
+ */
+export async function getNormalizedPreview(params = {}) {
+  try {
+    const response = await apiClient.get('/api/data/preview', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch preview',
+    };
+  }
+}
+
 export default apiClient;

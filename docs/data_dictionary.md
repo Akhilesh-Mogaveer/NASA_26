@@ -45,7 +45,12 @@ The exact attributes available depend on the selected FIRMS product and download
 | track             | Float           | Track measurement, when available        |
 | daynight          | String          | Day or night observation, when available |
 | source_file       | String          | Original dataset filename                |
-| processing_status | String          | Processing status                        |
+| processing_status | String          | Processing status (valid / invalid)      |
+| timestamp_utc     | String          | Formatted ISO-8601 UTC timestamp         |
+| is_valid          | Boolean         | Boolean validation gate result           |
+| validation_errors | String          | Semicolon-delimited validation errors    |
+| is_duplicate      | Boolean         | Exact or spatial-temporal duplicate flag |
+| raw_<attribute>   | Any             | Unedited source attribute preserved      |
 
 ## 4. Important Source Attributes
 

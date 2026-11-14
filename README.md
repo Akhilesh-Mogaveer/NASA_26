@@ -225,7 +225,72 @@ npm run dev
 
 Open the local URL provided by Vite.
 
-## 9. Scientific Considerations
+## 9. NASA FIRMS Data Ingestion & Validation Guide (Phase 2)
+
+### 9.1 How to Obtain NASA FIRMS Data
+
+1. Visit the **NASA FIRMS Active Fire Data Download portal**:
+   https://firms.modaps.eosdis.nasa.gov/download/
+2. Select your geographic region of interest (e.g., country or custom bounding box).
+3. Under Satellite Sources, download:
+   - **MODIS C6.1** (Terra and Aqua, 1km active-fire CSV)
+   - **VIIRS 375m** (Suomi-NPP, NOAA-20, or NOAA-21 active-fire CSV)
+4. (Optional) You can also request a free NASA FIRMS MAP_KEY from https://firms.modaps.eosdis.nasa.gov/api/map_key/ for automated API downloads in future versions.
+
+### 9.2 Where to Place Downloaded CSV Files
+
+Place your unedited NASA FIRMS CSV files in their designated directories:
+
+```text
+data/raw/modis/    <- Place MODIS CSV files here (e.g. fire_nrt_M-C61_*.csv)
+data/raw/viirs/    <- Place VIIRS CSV files here (e.g. fire_nrt_SV-C2_*.csv)
+```
+
+The ingestion engine supports multiple files per sensor, handles header inspection, and preserves all original source columns.
+
+### 9.3 How to Run the Ingestion & Validation Pipeline
+
+**Option A: Via API or Web UI**
+- Click **"Run Ingestion Pipeline"** on the **Data Quality** page in the web app, or
+- Make a POST request:
+  ```bash
+  curl -X POST http://localhost:8000/api/data/ingest
+  ```
+
+**Option B: Via Python CLI**
+```powershell
+cd backend
+.\venv\Scripts\activate
+python -c "from app.services.pipeline import run_ingestion_pipeline; print(run_ingestion_pipeline())"
+```
+
+Generated outputs will be saved to:
+- `data/processed/modis_normalized.csv`
+- `data/processed/viirs_normalized.csv`
+- `data/processed/unified_observations.csv`
+- `data/reports/data_quality_report.json`
+
+### 9.4 How to Inspect Data Quality Reports
+
+- **In the Web App**: Open the **Data Quality** tab to view pass rates, sensor breakdowns, invalid coordinate logs, and duplicate counts.
+- **Via API**:
+  ```bash
+  curl http://localhost:8000/api/data/quality
+  curl http://localhost:8000/api/data/preview?limit=5
+  ```
+- **Direct JSON File**: Open `data/reports/data_quality_report.json`.
+
+### 9.5 How to Run Automated Backend Tests
+
+Run the complete Pytest suite (including health, ingestion, bounds validation, duplicate checks, and endpoint tests):
+
+```powershell
+cd backend
+.\venv\Scripts\activate
+pytest -v
+```
+
+## 10. Scientific Considerations
 
 FireLens follows these principles:
 

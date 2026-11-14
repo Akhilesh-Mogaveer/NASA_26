@@ -110,3 +110,36 @@ class DataQualityResponse(BaseModel):
     modis_raw_files: int = 0
     viirs_raw_files: int = 0
     last_processed_at: Optional[str] = None
+
+
+class DataIngestResponse(BaseModel):
+    """Response returned after running ingestion and validation pipeline."""
+    status: str
+    message: str
+    total_records: int
+    valid_records: int
+    invalid_records: int
+    number_of_source_files: int
+    report: Dict[str, Any]
+
+
+class DataStatusResponse(BaseModel):
+    """Response showing current ingestion and dataset status."""
+    status: str
+    message: str
+    last_run_at: Optional[str] = None
+    has_processed_data: bool
+    modis_raw_files: int = 0
+    viirs_raw_files: int = 0
+    last_summary: Optional[Dict[str, Any]] = None
+
+
+class DataPreviewResponse(BaseModel):
+    """Response containing a slice of normalized active-fire observations."""
+    total_available: int
+    limit: int
+    offset: int
+    source_dataset: str
+    records: List[Dict[str, Any]]
+    message: str
+

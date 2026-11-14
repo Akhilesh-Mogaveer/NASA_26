@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.models.schemas import RootResponse
-from app.routes import health
+from app.routes import health, data
 
 
 @asynccontextmanager
@@ -74,5 +74,6 @@ async def root() -> RootResponse:
 
 # Register API routers under /api
 app.include_router(health.router, prefix=settings.API_PREFIX)
+app.include_router(data.router, prefix=settings.API_PREFIX)
 # Also register /health for standard platform health probes (e.g., Render, Kubernetes)
 app.include_router(health.router)
