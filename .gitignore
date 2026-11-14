@@ -1,0 +1,71 @@
+# FireLens — Git Ignore Configuration
+# NASA Space Apps Challenge 2026
+
+# Environment & Secrets (Never commit credentials)
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env
+*.pem
+
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+backend/venv/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node & Frontend Build
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+.vite/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Satellite Datasets & Processed Artefacts
+# Keep directories tracked via .gitkeep but ignore large CSV/Parquet downloads
+data/raw/modis/*.csv
+data/raw/modis/*.zip
+data/raw/viirs/*.csv
+data/raw/viirs/*.zip
+data/processed/*.csv
+data/processed/*.parquet
+data/reports/*.json
+!data/**/.gitkeep
+
+# IDEs & System Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
