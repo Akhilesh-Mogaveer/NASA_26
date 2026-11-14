@@ -113,13 +113,13 @@ export default function FireMapView() {
               {/* Legend */}
               <div className="pt-2 border-t border-space-800">
                 <span className="text-[11px] font-semibold text-space-300 block mb-2">
-                  Hot Spot Density Scale (per 2° Cell)
+                  Observation Density Scale (per 2° Cell)
                 </span>
                 <div className="space-y-1.5 font-mono text-[11px]">
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full bg-red-500 inline-block" />
-                      &gt; 25,000 fires
+                      &gt; 25,000 obs
                     </span>
                     <span className="text-space-400">Extreme</span>
                   </div>
@@ -140,7 +140,7 @@ export default function FireMapView() {
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full bg-sky-400 inline-block" />
-                      &lt; 1,000 fires
+                      &lt; 1,000 obs
                     </span>
                     <span className="text-space-400">Low</span>
                   </div>
@@ -280,7 +280,7 @@ export default function FireMapView() {
                     <th className="py-2.5 px-3">2° Grid Center</th>
                     <th className="py-2.5 px-3 text-modis">MODIS</th>
                     <th className="py-2.5 px-3 text-viirs">VIIRS</th>
-                    <th className="py-2.5 px-3 text-white">Total Fires</th>
+                    <th className="py-2.5 px-3 text-white">Active-Fire Observations</th>
                     <th className="py-2.5 px-3 text-amber-400">Mean FRP</th>
                     <th className="py-2.5 px-3 font-sans">Geographic Locus (2° Cell Bounds)</th>
                   </tr>

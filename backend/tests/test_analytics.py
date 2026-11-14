@@ -25,7 +25,8 @@ def test_analytics_overview_service():
     assert data["counts"]["viirs_count"] > 0
     assert data["counts"]["viirs_to_modis_ratio"] > 4.0
     assert "energetics" in data
-    assert data["energetics"]["total_frp_mw"] > 0
+    assert "frp_aggregates" in data
+    assert data["frp_aggregates"]["total_frp_mw"] > 0
     assert len(data["key_findings"]) >= 3
 
 

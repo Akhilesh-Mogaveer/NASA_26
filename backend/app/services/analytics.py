@@ -77,16 +77,39 @@ def get_analytics_overview() -> Dict[str, Any]:
     """Retrieve top-level platform overview metrics."""
     data = _load_json_artifact("analytics_summary.json")
     if not data:
-        # Fallback default structure
+        default_frp = {
+            "sum_reported_frp_mw": 0.0,
+            "mean_frp_mw": 0.0,
+            "modis_sum_mw": 0.0,
+            "viirs_sum_mw": 0.0,
+            "modis_mean_mw": 0.0,
+            "viirs_mean_mw": 0.0,
+            # Legacy field names for backwards compatibility
+            "total_frp_mw": 0.0,
+            "modis_total_mw": 0.0,
+            "viirs_total_mw": 0.0,
+        }
         return {
             "generated_at": "",
             "dataset_provenance": "NASA FIRMS",
             "temporal_coverage": {"start_date": "", "end_date": "", "year": 2025},
             "counts": {"total_observations": 0, "valid_observations": 0, "invalid_observations": 0, "modis_count": 0, "viirs_count": 0, "viirs_to_modis_ratio": 0.0},
-            "energetics": {"total_frp_mw": 0.0, "mean_frp_mw": 0.0, "modis_total_mw": 0.0, "viirs_total_mw": 0.0, "modis_mean_mw": 0.0, "viirs_mean_mw": 0.0},
+            "frp_aggregates": default_frp,
+            "energetics": default_frp,
             "geographical_extent": {"min_latitude": -90.0, "max_latitude": 90.0, "min_longitude": -180.0, "max_longitude": 180.0, "total_active_grid_cells": 0},
             "key_findings": [],
         }
+
+    # Ensure both frp_aggregates and energetics (deprecated) exist for backwards compatibility
+    frp_vals = data.get("frp_aggregates") or data.get("energetics") or {}
+    # Synchronize field names
+    if "total_frp_mw" in frp_vals and "sum_reported_frp_mw" not in frp_vals:
+        frp_vals["sum_reported_frp_mw"] = frp_vals["total_frp_mw"]
+    elif "sum_reported_frp_mw" in frp_vals and "total_frp_mw" not in frp_vals:
+        frp_vals["total_frp_mw"] = frp_vals["sum_reported_frp_mw"]
+
+    data["frp_aggregates"] = frp_vals
+    data["energetics"] = frp_vals
     return data
 
 

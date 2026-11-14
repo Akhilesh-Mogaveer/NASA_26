@@ -41,8 +41,9 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
   const modisCount = analytics?.counts?.modis_count || 3708771;
   const viirsCount = analytics?.counts?.viirs_count || 18466569;
   const ratio = analytics?.counts?.viirs_to_modis_ratio || 4.979;
-  const totalFRP = analytics?.energetics?.total_frp_mw || 331667580.75;
-  const meanFRP = analytics?.energetics?.mean_frp_mw || 14.96;
+  const frpAggs = analytics?.frp_aggregates || analytics?.energetics || {};
+  const totalFRP = frpAggs?.sum_reported_frp_mw || frpAggs?.total_frp_mw || 331667580.75;
+  const meanFRP = frpAggs?.mean_frp_mw || 14.96;
 
   return (
     <div className="space-y-6">
@@ -62,8 +63,11 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
             Harmonized Satellite Fire Intelligence
           </h1>
           <p className="mt-2 text-sm sm:text-base text-space-300 leading-relaxed">
-            FireLens bridges active-fire observations from NASA FIRMS MODIS and VIIRS satellite instruments.
-            Analyzing <strong>{(totalObs / 1e6).toFixed(2)} million</strong> authentic observations from 2025, FireLens quantifies multi-sensor discrepancies, resolves spatial footprint differences, and establishes principled spatial-temporal harmonization.
+            FireLens analyzes active-fire observations from NASA FIRMS MODIS and VIIRS satellite instruments.
+            Evaluating <strong>{(totalObs / 1e6).toFixed(2)} million</strong> authentic observations from 2025, FireLens quantifies multi-sensor discrepancies, resolves spatial footprint differences, and establishes principled spatial-temporal harmonization.
+            <span className="block mt-1 text-xs text-space-400 italic">
+              Note: Satellite detections represent instantaneous hotspot observations rather than counts of unique physical fire events; a single fire may generate multiple observations across pixels and overpasses.
+            </span>
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -94,7 +98,7 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-space-900/80 border border-space-750 shadow-sm">
           <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-            <span>Total Hot Spots</span>
+            <span>Hotspot Observations</span>
             <Flame className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">

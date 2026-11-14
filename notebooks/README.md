@@ -52,7 +52,7 @@ MODIS (Terra & Aqua, 1km resolution) and VIIRS (NOAA-20, 375m resolution) repres
     - Proposed candidate spatial search radius ($R_{\text{match}} \approx 1.25\text{--}3.5\text{ km}$), $N:1$ clustering, and temporal window gating ($\Delta t \le 90\text{ min}$).
     - Systematic Phase 4 evaluation protocol outlined (distance sensitivity, false vs. missed match trade-offs).
 12. **Reusable Analytical Outputs Generator:** Standalone executable function inside the notebook that refreshes all 8 analytical artifacts in `data/analytics/` directly from the unified catalog.
-13. **Scientific References & Citations:** Full academic citations (Giglio et al. 2016; Schroeder et al. 2014; Wooster et al. 2003, 2005; Kaufman et al. 1998; NASA FIRMS documentation).
+13. **Scientific References & Citations:** Full academic citations (Giglio et al. 2003, 2016; Schroeder et al. 2014; Wolfe et al. 2002; Wooster et al. 2003, 2005; Kaufman et al. 1998; NASA FIRMS documentation).
 
 ---
 
@@ -83,7 +83,7 @@ jupyter nbconvert --to notebook --execute notebooks/FireLens_EDA.ipynb --output 
 
 | Metric | MODIS C6.1 | VIIRS C2 (NOAA-20) | Multi-Sensor Relationship | Physical & Algorithmic Root Cause |
 | :--- | :--- | :--- | :--- | :--- |
-| **Valid Observation Count** | 3,708,771 | 18,466,561 | VIIRS detects **4.979x** more fires | 375m spatial resolution ($7.11\times$ smaller area) + gapless $3,040\text{ km}$ swath. |
+| **Valid Observation Count** | 3,708,771 | 18,466,561 | VIIRS detects **4.979x** more observations | 375m spatial resolution ($7.11\times$ smaller area) + gapless $3,040\text{ km}$ swath. |
 | **Mean FRP** | 41.21 MW | 9.68 MW | MODIS mean is **4.25x** higher | Sub-pixel thermal dilution: small fires (<5 MW) fail to trigger MODIS's 1km threshold. |
 | **Median FRP** | 17.90 MW | 5.05 MW | VIIRS detects far cooler fires | VIIRS minimum detectable FRP is ~0.5–1.0 MW compared to ~8–10 MW for MODIS. |
 | **Sum of Reported FRP** | 152.82M MW | 178.84M MW | Snapshot power sum (+17.0%) | Reflects footprint sampling and sub-pixel detection; does not represent total energy (FRE in MJ). |

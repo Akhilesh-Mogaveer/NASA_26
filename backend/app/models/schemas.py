@@ -152,7 +152,8 @@ class AnalyticsOverviewResponse(BaseModel):
     dataset_provenance: str
     temporal_coverage: Dict[str, Any]
     counts: Dict[str, Any]
-    energetics: Dict[str, Any]
+    frp_aggregates: Dict[str, Any]
+    energetics: Optional[Dict[str, Any]] = None  # Deprecated alias for backwards compatibility
     geographical_extent: Dict[str, Any]
     key_findings: List[str]
 

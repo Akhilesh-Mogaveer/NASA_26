@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T17:10:54Z",
+  "generated_at": "2026-11-14T17:50:39Z",
   "dataset_provenance": "NASA FIRMS (Fire Information for Resource Management System)",
   "temporal_coverage": {
     "start_date": "2025-01-01",
@@ -13,6 +13,17 @@
     "modis_count": 3708771,
     "viirs_count": 18466561,
     "viirs_to_modis_ratio": 4.979
+  },
+  "frp_aggregates": {
+    "sum_reported_frp_mw": 331667522.71,
+    "total_frp_mw": 331667522.71,
+    "mean_frp_mw": 14.96,
+    "modis_sum_mw": 152822705.8,
+    "modis_total_mw": 152822705.8,
+    "viirs_sum_mw": 178844816.91,
+    "viirs_total_mw": 178844816.91,
+    "modis_mean_mw": 41.21,
+    "viirs_mean_mw": 9.68
   },
   "energetics": {
     "total_frp_mw": 331667522.71,
@@ -30,10 +41,10 @@
     "total_active_grid_cells": 4300
   },
   "key_findings": [
-    "VIIRS detects 4.979x more active fire hot spots than MODIS (18.47M vs 3.71M), driven by its 375m spatial resolution.",
+    "VIIRS detects 4.979x more active-fire observations than MODIS (18.47M vs 3.71M), driven by its 375m spatial resolution.",
     "MODIS records a significantly higher mean FRP (41.21 MW vs 9.68 MW) because smaller, cooler fires remain below the 1km MODIS detection threshold.",
     "Sum of reported snapshot FRP observations is 152.8M MW for MODIS vs 178.8M MW for VIIRS (+17%), reflecting differing pixel aggregation and detection sensitivity rather than continuous energy convergence.",
-    "Both sensors exhibit peak diurnal fire activity in the early afternoon (12:00-14:00 UTC regional overpasses) matching peak ambient temperatures and lowest fuel moisture.",
+    "Global UTC observation counts reflect satellite overpass timing and the geographic distribution of detections. Estimated Local Solar Time (~10:30 and ~13:30) provides a more useful approximation of local overpass timing, but neither distribution alone establishes the actual daily fire-occurrence cycle.",
     "Data quality is exceptional: 22,175,332 out of 22,175,341 records (>99.9999%) are valid with zero missing coordinates or corrupt timestamps."
   ]
 }

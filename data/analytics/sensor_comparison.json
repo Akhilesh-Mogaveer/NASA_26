@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T17:10:54Z",
+  "generated_at": "2026-11-14T17:50:39Z",
   "observations": {
     "modis_count": 3708771,
     "viirs_count": 18466561,
@@ -19,6 +19,8 @@
     "ratio_mean_frp": 4.26,
     "modis_median_mw": 17.9,
     "viirs_median_mw": 5.05,
+    "modis_sum_reported_mw": 152822705.8,
+    "viirs_sum_reported_mw": 178844816.91,
     "modis_total_mw": 152822705.8,
     "viirs_total_mw": 178844816.91,
     "total_frp_ratio_viirs_to_modis": 1.17
@@ -63,9 +65,9 @@
     }
   },
   "scientific_reasons_for_divergence": [
-    "Spatial resolution advantage (375m vs 1000m): VIIRS resolves sub-pixel fires that MODIS misses due to thermal dilution in 1km\u00b2 pixels.",
-    "Edge-of-scan pixel geometry: VIIRS pixel aggregation constrains pixel growth to ~4x vs MODIS ~10x expansion.",
-    "Swath width difference: VIIRS 3040 km swath leaves no equatorial gaps, while MODIS has orbital gaps.",
-    "Detection threshold: Minimum detectable FRP for VIIRS is ~0.5-1.0 MW compared to ~8-10 MW for MODIS."
+    "Spatial resolution advantage (375m vs 1000m): VIIRS resolves sub-pixel fires that MODIS misses due to thermal dilution in 1km\u00b2 pixels (Giglio et al. 2016, Schroeder et al. 2014).",
+    "Edge-of-scan pixel geometry: VIIRS onboard pixel aggregation constrains pixel growth to ~4x vs MODIS ~10x expansion (Wolfe et al. 2002, Schroeder et al. 2014).",
+    "Swath width difference: VIIRS 3040 km swath leaves no equatorial gaps, while MODIS (2330 km) has daytime orbital gaps.",
+    "Detection threshold: Minimum detectable FRP for VIIRS is ~0.5-1.0 MW compared to ~8-10 MW for MODIS (Schroeder et al. 2014, Giglio et al. 2003, 2016)."
   ]
 }

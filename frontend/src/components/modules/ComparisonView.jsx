@@ -107,7 +107,7 @@ export default function ComparisonView() {
                     <td className="py-2.5 px-4 font-bold text-modis">{obs.modis_count?.toLocaleString()}</td>
                     <td className="py-2.5 px-4 font-bold text-viirs">{obs.viirs_count?.toLocaleString()}</td>
                     <td className="py-2.5 px-4 font-sans text-space-300">
-                      VIIRS detects <strong className="text-white font-mono">{obs.viirs_to_modis_ratio}x</strong> more hot spots
+                      VIIRS reports <strong className="text-white font-mono">{obs.viirs_to_modis_ratio}x</strong> more hotspot observations
                     </td>
                   </tr>
                   <tr className="hover:bg-space-900/40">
@@ -176,7 +176,7 @@ export default function ComparisonView() {
                   <YAxis stroke="#64748b" tickFormatter={formatThousands} tick={{ fontSize: 11 }} />
                   <Tooltip 
                     contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value) => [value.toLocaleString(), 'Observations']}
+                    formatter={(value) => [value.toLocaleString(), 'Active-Fire Observations']}
                   />
                   <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
                   <Bar dataKey="modis_count" name="MODIS C6.1" fill="#3b82f6" radius={[4, 4, 0, 0]} />
@@ -187,7 +187,7 @@ export default function ComparisonView() {
             <div className="p-3 mt-2 rounded-lg bg-space-900 border border-space-800 text-xs text-space-300 flex items-start gap-2.5">
               <Info className="w-4 h-4 text-accent-blue mt-0.5 flex-shrink-0" />
               <p>
-                <strong>Scientific Insight:</strong> In the <code>0–5 MW</code> bin alone, VIIRS detected <strong>9,148,369</strong> observations compared to only <strong>84,755</strong> for MODIS. Because a 1km² MODIS pixel requires substantial integrated thermal energy to trigger detection, small low-intensity fires remain invisible to MODIS but are readily resolved by VIIRS.
+                <strong>Scientific Insight:</strong> In the <code>0–5 MW</code> bin alone, VIIRS detected <strong>9,148,369</strong> active-fire observations compared to only <strong>84,755</strong> for MODIS. Because a 1km² MODIS footprint requires substantial sub-pixel thermal radiation to trigger detection, small low-power fires remain below detection threshold for MODIS but are readily detected as hotspot observations by VIIRS.
               </p>
             </div>
           </Card>
