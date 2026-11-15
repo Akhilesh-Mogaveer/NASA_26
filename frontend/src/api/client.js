@@ -1,15 +1,17 @@
 import axios from 'axios';
 
 // Get API base URL from Vite environment variables.
-// When empty or running with Vite proxy, relative '/api' calls route to the backend.
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+// Priority: VITE_API_BASE_URL (standard production) -> VITE_API_URL -> empty fallback (relative path / Vite dev proxy).
+// Strip any trailing slashes to guarantee clean, deterministic endpoint path concatenation.
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 30000,
 });
 
 /**
