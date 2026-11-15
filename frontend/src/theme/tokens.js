@@ -93,3 +93,10 @@ export const CANVAS_THEME = {
   bgGlass: 'rgba(11, 17, 30, 0.70)',
   borderGlass: 'rgba(255, 255, 255, 0.10)',
 };
+
+// Leaflet Map Theme Tokens
+export const MAP_THEME = {
+  backgroundColor: '#070b12',
+  tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+};
