@@ -11,7 +11,8 @@ import {
   WifiOff, 
   RefreshCw,
   GitMerge,
-  Layers
+  Layers,
+  GitBranch
 } from 'lucide-react';
 import StatusBadge from '../common/StatusBadge';
 
@@ -20,6 +21,7 @@ export default function Navbar({ activeTab, setActiveTab, backendStatus, checkin
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'matching', label: 'Matching Engine', icon: GitMerge },
     { id: 'events', label: 'Event Clusters', icon: Layers },
+    { id: 'evolution', label: 'Event Evolution', icon: GitBranch },
     { id: 'map', label: 'Fire Map', icon: Map },
     { id: 'comparison', label: 'Sensor Comparison', icon: GitCompare },
     { id: 'activity', label: 'Activity Analysis', icon: Radio },

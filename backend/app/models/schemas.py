@@ -689,5 +689,215 @@ class EventMapLinesResponse(BaseModel):
     count: int
 
 
+# =============================================================================
+# Phase 6: Temporal Event Evolution & Lifecycle Tracking Schemas
+# =============================================================================
+
+class EvolutionRunRequest(BaseModel):
+    """Configuration payload to trigger temporal event evolution."""
+    max_temporal_gap_hours: float = Field(24.0, ge=0.5, le=168.0, description="Maximum temporal gap in hours between successive cluster detections")
+    max_spatial_distance_km: float = Field(5.0, ge=0.5, le=50.0, description="Maximum centroid or extent distance in km")
+    use_extent_aware: bool = Field(True, description="Account for cluster spatial extent when evaluating continuity")
+    ambiguity_delta_threshold: float = Field(0.15, ge=0.01, le=0.5, description="Score delta threshold to flag competing lineage links")
+    experiment_name: str = Field("regional_boreal_evolution", description="Unique experiment label")
+
+
+class EvolutionJobStatusResponse(BaseModel):
+    """Status of background evolution tracking job."""
+    job_id: Optional[str] = None
+    status: str
+    progress_percent: float = 0.0
+    message: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    error: Optional[str] = None
+
+
+class TemporalRelationshipItem(BaseModel):
+    """Directed temporal continuity relationship between earlier and later clusters."""
+    relationship_id: str
+    sensor: str
+    source_cluster_id: str
+    target_cluster_id: str
+    source_start_utc: str
+    source_end_utc: str
+    target_start_utc: str
+    target_end_utc: str
+    temporal_gap_hours: float
+    centroid_distance_km: float
+    effective_distance_km: float
+    spatial_association_method: str
+    source_observation_count: int
+    target_observation_count: int
+    source_sum_frp_mw: float
+    target_sum_frp_mw: float
+    delta_sum_frp_mw: float
+    source_centroid_lat: float
+    source_centroid_lon: float
+    target_centroid_lat: float
+    target_centroid_lon: float
+    heuristic_score: float
+    classification: str  # continuation_candidate, possible_split, possible_merge, complex_lineage
+    is_ambiguous: bool
+    track_id: Optional[str] = None
+    supporting_cross_sensor_count: int = 0
+
+
+class TemporalRelationshipsResponse(BaseModel):
+    """Paginated list of temporal relationships."""
+    items: List[TemporalRelationshipItem]
+    total_count: int
+    limit: int
+    offset: int
+
+
+class EventTrackItem(BaseModel):
+    """Summary of a temporal event track."""
+    track_id: str
+    sensor: str
+    cluster_count: int
+    observation_count: int
+    temporal_edges_count: int
+    track_type: str  # linear_track, branching_split, branching_merge, complex_network, isolated_cluster
+    first_observed_utc: str
+    last_observed_utc: str
+    total_duration_hours: float
+    mean_temporal_gap_hours: float
+    max_temporal_gap_hours: float
+    mean_centroid_separation_km: float
+    max_centroid_separation_km: float
+    sum_snapshot_frp_mw: float
+    mean_frp_mw: float
+    max_frp_mw: float
+    min_frp_mw: float
+    splits_count: int
+    merges_count: int
+    mean_heuristic_score: float
+    has_ambiguity: bool
+    cross_sensor_associations_count: int
+
+
+class EventTracksResponse(BaseModel):
+    """Paginated list of event tracks."""
+    items: List[EventTrackItem]
+    total_count: int
+    limit: int
+    offset: int
+
+
+class TrackTimelineItem(BaseModel):
+    """Step in an event track's chronological timeline."""
+    step_index: int
+    cluster_id: str
+    timestamp_utc: str
+    duration_minutes: float
+    observation_count: int
+    centroid_latitude: float
+    centroid_longitude: float
+    sum_frp_mw: float
+    mean_frp_mw: float
+    max_frp_mw: float
+    primary_satellite: str
+    in_degree: int
+    out_degree: int
+    predecessors: List[str] = []
+    successors: List[str] = []
+    temporal_gap_to_prev_hours: Optional[float] = None
+    centroid_dist_to_prev_km: Optional[float] = None
+    delta_frp_from_prev_mw: Optional[float] = None
+
+
+class TrackTimelineResponse(BaseModel):
+    """Timeline of clusters within a track."""
+    track_id: str
+    sensor: str
+    total_steps: int
+    timeline: List[TrackTimelineItem]
+
+
+class TrackLineageEdge(BaseModel):
+    """Directed edge in track lineage graph."""
+    source_cluster_id: str
+    target_cluster_id: str
+    temporal_gap_hours: float
+    centroid_distance_km: float
+    classification: str
+    heuristic_score: float
+    is_ambiguous: bool
+
+
+class TrackLineageResponse(BaseModel):
+    """Complete lineage graph for an event track."""
+    track_id: str
+    sensor: str
+    nodes: List[Dict[str, Any]]
+    edges: List[TrackLineageEdge]
+    splits_count: int
+    merges_count: int
+
+
+class EvolutionMapNode(BaseModel):
+    """Cluster node for map display."""
+    cluster_id: str
+    track_id: str
+    sensor: str
+    latitude: float
+    longitude: float
+    timestamp_utc: str
+    observation_count: int
+    sum_frp_mw: float
+    track_type: str
+
+
+class EvolutionMapEdge(BaseModel):
+    """Directed vector line between successive clusters for map display."""
+    relationship_id: str
+    track_id: str
+    sensor: str
+    source_cluster_id: str
+    target_cluster_id: str
+    coordinates: List[List[float]]  # [[src_lat, src_lon], [tgt_lat, tgt_lon]]
+    temporal_gap_hours: float
+    centroid_distance_km: float
+    classification: str
+    heuristic_score: float
+    is_ambiguous: bool
+
+
+class EvolutionMapResponse(BaseModel):
+    """Nodes and directed edges for Leaflet map display."""
+    nodes: List[EvolutionMapNode]
+    edges: List[EvolutionMapEdge]
+    nodes_count: int
+    edges_count: int
+
+
+class EvolutionSummaryResponse(BaseModel):
+    """Summary metrics of temporal event evolution."""
+    experiment_name: str
+    status: str
+    executed_at: Optional[str] = None
+    parameters: Dict[str, Any]
+    modis: Dict[str, Any]
+    viirs: Dict[str, Any]
+    combined_cross_sensor: Dict[str, Any]
+
+
+class EvolutionExperimentItem(BaseModel):
+    """Log of a completed evolution experiment."""
+    experiment_name: str
+    executed_at: str
+    max_temporal_gap_hours: float
+    max_spatial_distance_km: float
+    modis_tracks_count: int
+    viirs_tracks_count: int
+    modis_relationships_count: int
+    viirs_relationships_count: int
+    total_splits: int
+    total_merges: int
+    runtime_seconds: float
+
+
+
 
 

@@ -519,6 +519,62 @@ To ensure the clustering and event association engines produce reproducible, mat
      - `weak_candidate`: 7 relationships ($\text{score} < 0.45$)
      - **Total: 158 candidate relationships**
 
+### 14.13 Temporal Event Evolution and Lifecycle Tracking (Phase 6)
+
+Phase 6 introduces longitudinal tracking of active-fire clusters across successive satellite overpass periods to analyze empirical temporal continuity:
+
+1. **Scientific Definition of Temporal Event Track:**
+   - A temporal event track is an empirical sequence or branching graph of candidate relationships between previously generated spatial-temporal clusters from successive observation periods.
+   - It is **not** a confirmed physical wildfire identity.
+   - The platform strictly distinguishes:
+     1. Original satellite snapshot detections.
+     2. Independently clustered sensor-specific hotspot groups.
+     3. Cross-sensor spatial-temporal candidate associations.
+     4. Same-sensor candidate temporal continuity links.
+     5. Temporal event tracks and their lineage.
+     6. Confirmed physical fires (which cannot be established from satellite hotspot points alone).
+   - Missing observations across overpass intervals do **not** confirm wildfire extinguishment.
+   - Summed snapshot FRP is strictly expressed in Megawatts (MW) as instantaneous reported power, **not** Fire Radiative Energy (MJ).
+
+2. **Temporal Continuity Constraints & Candidate Discovery:**
+   - Evaluated **independently** for MODIS and VIIRS:
+     - Chronological ordering is strictly forward: $t_{\text{start, late}} > t_{\text{start, early}}$. Reverse-time and simultaneous links are rejected.
+     - Temporal gap threshold: $0 < \Delta t_{\text{gap}} \le \text{max\_temporal\_gap\_hours}$ (default: $24.0\text{ hours}$).
+     - Spatial distance threshold: Spherical Haversine distance $d_{\text{haversine}} \le \text{max\_spatial\_distance\_km}$ (default: $5.0\text{ km}$, $R = 6371.0088\text{ km}$).
+     - Extent-aware spatial distance: Optionally incorporates cluster spatial spread:
+       $$d_{\text{effective}} = \max\left(0.0, d_{\text{centroid}} - (r_{\text{early}} + r_{\text{late}})\right)$$
+     - Avoids global $O(N^2)$ brute-force comparisons by pre-sorting clusters by acquisition epoch and performing binary search indexing.
+
+3. **Graph Topology & Split/Merge Detection:**
+   - Represents clusters as nodes and continuity as directed edges $C_{\text{early}} \to C_{\text{late}}$.
+   - Degree connectivity defines edge lineage classifications:
+     - $d_{\text{out}}=1, d_{\text{in}}=1 \implies$ `continuation_candidate`
+     - $d_{\text{out}}>1, d_{\text{in}}=1 \implies$ `possible_split`
+     - $d_{\text{out}}=1, d_{\text{in}}>1 \implies$ `possible_merge`
+     - $d_{\text{out}}>1, d_{\text{in}}>1 \implies$ `complex_lineage`
+   - *Ambiguity Safeguard:* Flagged when a cluster has competing predecessor or successor candidate edges whose heuristic scores differ by $\le \Delta_{\text{thresh}} = 0.15$.
+
+4. **Event Track Construction & Lifecycle Metrics:**
+   - Weakly connected components form temporal event tracks (`TRACK-{sensor}-{seq:05d}`).
+   - Isolated clusters with zero continuity edges are explicitly accounted for as `isolated_cluster` tracks.
+   - Observation-based metrics computed per track:
+     - First and last observed timestamps, total observed duration in hours.
+     - Number of distinct overpass observation periods and re-observation gaps.
+     - Total observations tracked and mean/max snapshot FRP (MW).
+     - Successive snapshot changes ($\Delta \text{FRP}$, $\Delta \text{observations}$).
+
+5. **Cross-Sensor Supporting Evidence Overlay:**
+   - Integrates Phase 5 cross-sensor candidate associations as supporting evidence annotations on same-sensor tracks without merging sensor-specific track IDs.
+
+6. **Empirical Benchmark Findings (Saskatchewan Boreal Dataset):**
+   - **Total Clusters Processed:** 980 (310 MODIS, 670 VIIRS).
+   - **Total Continuity Edges:** 5,061 (1,065 MODIS, 3,996 VIIRS).
+   - **Total Event Tracks:** 75 (38 MODIS, 37 VIIRS).
+   - **MODIS Tracks:** 20 multi-cluster tracks, 18 isolated clusters (47.37%), median duration $33.95\text{ hours}$, 202 splits, 203 merges.
+   - **VIIRS Tracks:** 33 multi-cluster tracks, 4 isolated clusters (10.81%), median duration $35.18\text{ hours}$, 520 splits, 532 merges.
+   - **Conservation of Observations:** 20,989 total observations tracked (2,191 MODIS, 18,798 VIIRS), matching 100.0% of clustered observations.
+   - **Computational Benchmark:** 4.40 seconds wall-clock runtime, 11.35 MB peak traced memory.
+
 ## 15. Expected Output
 
 The harmonization process produces:

@@ -607,4 +607,160 @@ export async function getEventMapRelationships(params = {}) {
   }
 }
 
+/**
+ * =========================================================================
+ * Phase 6 Temporal Event Evolution API Client Methods
+ * =========================================================================
+ */
+
+/**
+ * Get temporal event evolution summary metrics
+ */
+export async function getEvolutionSummary() {
+  try {
+    const response = await apiClient.get('/api/evolution/summary');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch evolution summary',
+    };
+  }
+}
+
+/**
+ * Query paginated temporal event tracks
+ */
+export async function getEvolutionTracks(params = {}) {
+  try {
+    const response = await apiClient.get('/api/evolution/tracks', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch evolution tracks',
+    };
+  }
+}
+
+/**
+ * Get single event track detail
+ */
+export async function getEvolutionTrackDetail(trackId) {
+  try {
+    const response = await apiClient.get(`/api/evolution/tracks/${encodeURIComponent(trackId)}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch track detail',
+    };
+  }
+}
+
+/**
+ * Get chronological timeline steps for a specific event track
+ */
+export async function getEvolutionTrackTimeline(trackId) {
+  try {
+    const response = await apiClient.get(`/api/evolution/tracks/${encodeURIComponent(trackId)}/timeline`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch track timeline',
+    };
+  }
+}
+
+/**
+ * Get directed lineage graph for an event track
+ */
+export async function getEvolutionTrackLineage(trackId) {
+  try {
+    const response = await apiClient.get(`/api/evolution/tracks/${encodeURIComponent(trackId)}/lineage`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch track lineage',
+    };
+  }
+}
+
+/**
+ * Query paginated temporal continuity relationships
+ */
+export async function getEvolutionRelationships(params = {}) {
+  try {
+    const response = await apiClient.get('/api/evolution/relationships', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch temporal relationships',
+    };
+  }
+}
+
+/**
+ * Get map nodes and directed continuity vector lines for Leaflet map display
+ */
+export async function getEvolutionMap(params = {}) {
+  try {
+    const response = await apiClient.get('/api/evolution/map', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch evolution map data',
+    };
+  }
+}
+
+/**
+ * Trigger background temporal event evolution job
+ */
+export async function runEvolution(params = {}) {
+  try {
+    const response = await apiClient.post('/api/evolution/run', params);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to trigger evolution',
+    };
+  }
+}
+
+/**
+ * Get status of background evolution job
+ */
+export async function getEvolutionStatus() {
+  try {
+    const response = await apiClient.get('/api/evolution/status');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch evolution status',
+    };
+  }
+}
+
+/**
+ * Get list of completed evolution experiments
+ */
+export async function getEvolutionExperiments() {
+  try {
+    const response = await apiClient.get('/api/evolution/experiments');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch evolution experiments',
+    };
+  }
+}
+
 export default apiClient;

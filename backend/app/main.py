@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.models.schemas import RootResponse
-from app.routes import health, data, analytics, matching, events
+from app.routes import health, data, analytics, matching, events, evolution
 
 
 @asynccontextmanager
@@ -24,6 +24,7 @@ async def lifespan(app: FastAPI):
     settings.DATA_ANALYTICS_DIR.mkdir(parents=True, exist_ok=True)
     settings.DATA_MATCHING_DIR.mkdir(parents=True, exist_ok=True)
     settings.DATA_EVENTS_DIR.mkdir(parents=True, exist_ok=True)
+    settings.DATA_EVOLUTION_DIR.mkdir(parents=True, exist_ok=True)
     yield
 
 
@@ -81,5 +82,6 @@ app.include_router(data.router, prefix=settings.API_PREFIX)
 app.include_router(analytics.router, prefix=settings.API_PREFIX)
 app.include_router(matching.router, prefix=settings.API_PREFIX)
 app.include_router(events.router, prefix=settings.API_PREFIX)
+app.include_router(evolution.router, prefix=settings.API_PREFIX)
 # Also register /health for standard platform health probes (e.g., Render, Kubernetes)
 app.include_router(health.router)

@@ -489,6 +489,40 @@ Phase 5 transitions FireLens from individual hotspot point associations to coher
 - **Topological Disentanglement:** Explicit mathematical distinction between relationship edge multiplicity (90 `1:1`, 26 `1:N`, 36 `N:1`, 6 `M:N` across 158 edges) and connected component topology (90 `1:1_pair`, 10 `1:N_star`, 13 `N:1_star`, 5 `M:N_complex` across 118 components).
 - **Audit Test Suite:** 12 dedicated audit tests in `backend/tests/test_phase5_audit.py` ensuring complete regression coverage across all 11 scientific validation domains (96 passing tests total).
 
+### 12.7 Phase 6: Temporal Event Evolution and Lifecycle Tracking
+- **Temporal Event Tracks:** Sequences and branching graphs of candidate continuity relationships between independently generated clusters across successive overpass intervals.
+- **Scientific Constraints:** Candidate continuity does NOT prove confirmed physical fire identity, propagation, or perimeter. Absence of detections does NOT imply wildfire extinguishment. FRP snapshot power is reported strictly in Megawatts (MW), NOT Fire Radiative Energy (MJ).
+- **Directed Graph & Topology:** Identifies `continuation_candidate`, `possible_split`, `possible_merge`, and `complex_lineage` based on local in-degree and out-degree. Flagged for ambiguity when candidate edges compete within score $\Delta \le 0.15$.
+- **Real-Data Regional Benchmark Results (Saskatchewan Boreal Dataset):**
+  - **Total Clusters Processed:** 980 (310 MODIS, 670 VIIRS).
+  - **Temporal Continuity Relationships:** 5,061 (1,065 MODIS, 3,996 VIIRS).
+  - **Event Tracks Constructed:** 75 (38 MODIS, 37 VIIRS).
+  - **MODIS Tracks:** 20 multi-cluster tracks, 18 isolated single clusters (47.37%), median duration $33.95\text{ hours}$, 202 splits, 203 merges.
+  - **VIIRS Tracks:** 33 multi-cluster tracks, 4 isolated single clusters (10.81%), median duration $35.18\text{ hours}$, 520 splits, 532 merges.
+  - **Conservation of Observations:** Exactly 20,989 observations tracked (2,191 MODIS, 18,798 VIIRS), preserving 100% of clustered observations.
+  - **Performance:** 4.40 seconds wall-clock runtime, 11.35 MB peak traced memory.
+- **Evolution Artifacts (`data/evolution/`):**
+  - `modis_temporal_relationships.parquet` (45 KB) — 1,065 directed MODIS continuity edges.
+  - `viirs_temporal_relationships.parquet` (140 KB) — 3,996 directed VIIRS continuity edges.
+  - `modis_event_tracks.parquet` (7 KB) — 38 MODIS event tracks with lifecycle metrics.
+  - `viirs_event_tracks.parquet` (7 KB) — 37 VIIRS event tracks with lifecycle metrics.
+  - `event_track_membership.parquet` (44 KB) — Cluster-to-track assignments and degree counts.
+  - `event_track_lineage.parquet` (71 KB) — Directed graph transitions and split/merge annotations.
+  - `event_evolution_summary.json` (2.3 KB) — Full summary metrics and breakdown counts.
+  - `event_evolution_experiments.parquet` (2.2 KB) — Benchmark log.
+  - `event_evolution_manifest.json` (0.6 KB) — Processing state manifest.
+- **API Endpoints (`/api/evolution/*`):**
+  - `POST /api/evolution/run` — Asynchronous temporal evolution execution.
+  - `GET /api/evolution/status` — Live job status and progress.
+  - `GET /api/evolution/summary` — Evolution summary metrics and benchmark data.
+  - `GET /api/evolution/tracks` — Paginated event tracks with topology and duration filters.
+  - `GET /api/evolution/tracks/{track_id}` — Single event track summary metadata.
+  - `GET /api/evolution/tracks/{track_id}/timeline` — Step-by-step observation timeline.
+  - `GET /api/evolution/tracks/{track_id}/lineage` — Directed lineage graph with split/merge classifications.
+  - `GET /api/evolution/relationships` — Paginated candidate temporal continuity edges.
+  - `GET /api/evolution/map` — Centroid nodes and directed continuity vector lines for Leaflet map display.
+  - `GET /api/evolution/experiments` — Historical experiment logs.
+
 ---
 
 ## 13. Scientific Considerations

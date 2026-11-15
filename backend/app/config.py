@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     DATA_ANALYTICS_DIR: Path = BASE_DIR / "data" / "analytics"
     DATA_MATCHING_DIR: Path = BASE_DIR / "data" / "matching"
     DATA_EVENTS_DIR: Path = BASE_DIR / "data" / "events"
+    DATA_EVOLUTION_DIR: Path = BASE_DIR / "data" / "evolution"
 
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / "backend" / ".env"),
