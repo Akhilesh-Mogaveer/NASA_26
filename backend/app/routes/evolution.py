@@ -43,6 +43,8 @@ async def run_evolution(payload: EvolutionRunRequest):
         "max_temporal_gap_hours": payload.max_temporal_gap_hours,
         "max_spatial_distance_km": payload.max_spatial_distance_km,
         "use_extent_aware": payload.use_extent_aware,
+        "max_centroid_cap_km": payload.max_centroid_cap_km,
+        "candidate_selection_strategy": payload.candidate_selection_strategy,
         "ambiguity_delta_threshold": payload.ambiguity_delta_threshold,
         "experiment_name": payload.experiment_name,
     })

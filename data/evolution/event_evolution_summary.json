@@ -1,69 +1,78 @@
 {
-  "experiment_name": "regional_boreal_evolution",
+  "experiment_name": "regional_boreal_evolution_sop",
   "status": "completed",
-  "executed_at": "2026-11-15T04:51:34Z",
+  "executed_at": "2026-11-15T05:27:36Z",
   "parameters": {
     "max_temporal_gap_hours": 24.0,
     "max_spatial_distance_km": 5.0,
     "use_extent_aware": true,
+    "max_centroid_cap_km": 7.5,
+    "candidate_selection_strategy": "successive_period",
     "ambiguity_delta_threshold": 0.15
   },
   "benchmarks": {
-    "runtime_seconds": 4.4,
-    "peak_traced_memory_mb": 11.35,
-    "process_rss_mb": 218.77,
+    "runtime_seconds": 9.26,
+    "peak_traced_memory_mb": 4.46,
+    "process_rss_mb": 201.98,
     "total_clusters_processed": 980,
-    "total_relationships_generated": 5061,
-    "total_tracks_constructed": 75
+    "total_relationships_generated": 1187,
+    "total_tracks_constructed": 115
   },
   "modis": {
     "clusters_represented": 310,
-    "total_event_tracks": 38,
-    "multi_cluster_tracks_count": 20,
-    "isolated_clusters_count": 18,
-    "isolated_cluster_rate_pct": 47.37,
-    "total_temporal_relationships": 1065,
-    "splits_count": 202,
-    "merges_count": 203,
-    "median_observed_track_duration_hours": 33.95,
-    "mean_observed_track_duration_hours": 29.84,
+    "total_event_tracks": 58,
+    "multi_cluster_tracks_count": 33,
+    "isolated_clusters_count": 25,
+    "isolated_cluster_rate_pct": 43.1,
+    "total_temporal_relationships": 303,
+    "splits_count": 64,
+    "merges_count": 65,
+    "median_observed_track_duration_hours": 24.63,
+    "mean_observed_track_duration_hours": 26.03,
     "total_observations_tracked": 2191,
     "total_snapshot_frp_mw": 244569.0,
+    "clusters_with_cross_sensor_evidence_count": 142,
+    "cross_sensor_evidence_rate_pct": 45.81,
     "track_type_breakdown": {
       "complex_network": 18,
-      "isolated_cluster": 18,
-      "branching_merge": 1,
-      "branching_split": 1
+      "branching_merge": 3,
+      "linear_track": 10,
+      "isolated_cluster": 25,
+      "branching_split": 2
     },
     "classification_breakdown": {
-      "possible_split": 35,
-      "complex_lineage": 992,
-      "possible_merge": 38
+      "continuation_candidate": 96,
+      "possible_merge": 67,
+      "possible_split": 64,
+      "complex_lineage": 76
     }
   },
   "viirs": {
     "clusters_represented": 670,
-    "total_event_tracks": 37,
-    "multi_cluster_tracks_count": 33,
-    "isolated_clusters_count": 4,
-    "isolated_cluster_rate_pct": 10.81,
-    "total_temporal_relationships": 3996,
-    "splits_count": 520,
-    "merges_count": 532,
-    "median_observed_track_duration_hours": 35.18,
-    "mean_observed_track_duration_hours": 29.49,
+    "total_event_tracks": 57,
+    "multi_cluster_tracks_count": 46,
+    "isolated_clusters_count": 11,
+    "isolated_cluster_rate_pct": 19.3,
+    "total_temporal_relationships": 884,
+    "splits_count": 244,
+    "merges_count": 258,
+    "median_observed_track_duration_hours": 35.19,
+    "mean_observed_track_duration_hours": 30.53,
     "total_observations_tracked": 18798,
     "total_snapshot_frp_mw": 303706.98,
+    "clusters_with_cross_sensor_evidence_count": 134,
+    "cross_sensor_evidence_rate_pct": 20.0,
     "track_type_breakdown": {
-      "complex_network": 29,
-      "isolated_cluster": 4,
-      "linear_track": 4
+      "complex_network": 27,
+      "linear_track": 18,
+      "branching_split": 1,
+      "isolated_cluster": 11
     },
     "classification_breakdown": {
-      "complex_lineage": 3924,
-      "possible_split": 35,
-      "possible_merge": 32,
-      "continuation_candidate": 5
+      "continuation_candidate": 169,
+      "possible_split": 133,
+      "complex_lineage": 443,
+      "possible_merge": 139
     }
   },
   "combined_cross_sensor": {

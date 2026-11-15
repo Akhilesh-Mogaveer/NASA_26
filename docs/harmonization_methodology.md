@@ -563,17 +563,25 @@ Phase 6 introduces longitudinal tracking of active-fire clusters across successi
      - Total observations tracked and mean/max snapshot FRP (MW).
      - Successive snapshot changes ($\Delta \text{FRP}$, $\Delta \text{observations}$).
 
-5. **Cross-Sensor Supporting Evidence Overlay:**
-   - Integrates Phase 5 cross-sensor candidate associations as supporting evidence annotations on same-sensor tracks without merging sensor-specific track IDs.
+5. **Successive Observation Period (SOP) Candidate Selection & Centroid Cap (Phase 6.1 Audit):**
+   - *Transitive Shortcut Elimination:* Unconstrained window-based linking ($t \in [0, 24\text{ h}]$) created dense transitive cliques ($A \to B$, $B \to C$, and shortcut $A \to C$). SOP candidate selection identifies the earliest subsequent observation period ($t_{\text{earliest\_next}} + 30\text{ min}$) for each source cluster, preserving all candidate splits, merges, and ambiguities occurring at that immediate next overpass while eliminating multi-hop shortcuts across subsequent overpasses.
+   - *Extent Separation Safeguard:* To prevent sprawling multi-point clusters from making unphysical spatial leaps when using extent-aware distance, centroid separation is capped by a hard upper bound:
+     $$d_{\text{centroid}} \le \text{max\_centroid\_cap\_km} \quad (\text{default: } 7.5\text{ km})$$
+   - *Cross-Sensor Supporting Evidence Overlay:* Rather than conflating multi-day temporal tracks with short-window ($\pm 60\text{ min}$) cross-sensor counterpart edges, track-level cross-sensor evidence is evaluated as the proportion of constituent clusters with confirmed Phase 5 counterpart associations.
 
-6. **Empirical Benchmark Findings (Saskatchewan Boreal Dataset):**
-   - **Total Clusters Processed:** 980 (310 MODIS, 670 VIIRS).
-   - **Total Continuity Edges:** 5,061 (1,065 MODIS, 3,996 VIIRS).
-   - **Total Event Tracks:** 75 (38 MODIS, 37 VIIRS).
-   - **MODIS Tracks:** 20 multi-cluster tracks, 18 isolated clusters (47.37%), median duration $33.95\text{ hours}$, 202 splits, 203 merges.
-   - **VIIRS Tracks:** 33 multi-cluster tracks, 4 isolated clusters (10.81%), median duration $35.18\text{ hours}$, 520 splits, 532 merges.
-   - **Conservation of Observations:** 20,989 total observations tracked (2,191 MODIS, 18,798 VIIRS), matching 100.0% of clustered observations.
-   - **Computational Benchmark:** 4.40 seconds wall-clock runtime, 11.35 MB peak traced memory.
+6. **Empirical Benchmark Findings (Saskatchewan Boreal Dataset — Phase 6.1 SOP):**
+   - **Total Clusters Processed:** 980 (310 MODIS, 670 VIIRS) — 100.0% cluster conservation.
+   - **Total Continuity Edges:** 1,187 (303 MODIS, 884 VIIRS) — a 76.5% reduction in multi-hop transitive shortcuts compared to unconstrained windows.
+   - **Lineage Edge Classification:**
+     - `continuation_candidate`: 265 (96 MODIS, 169 VIIRS) — increased from 5 in dense mode.
+     - `possible_split`: 197 (64 MODIS, 133 VIIRS).
+     - `possible_merge`: 206 (67 MODIS, 139 VIIRS).
+     - `complex_lineage`: 519 (76 MODIS, 443 VIIRS) — decreased from 97.1% down to 43.7%.
+   - **Total Event Tracks:** 115 (58 MODIS, 57 VIIRS).
+   - **MODIS Tracks:** 33 multi-cluster tracks, 25 isolated single-cluster tracks (43.1%), median duration $24.63\text{ hours}$, 64 splits, 65 merges; 142 clusters (45.81%) supported by Phase 5 cross-sensor evidence.
+   - **VIIRS Tracks:** 46 multi-cluster tracks, 11 isolated single-cluster tracks (19.3%), median duration $35.19\text{ hours}$, 244 splits, 258 merges; 134 clusters (20.00%) supported by Phase 5 cross-sensor evidence.
+   - **Conservation of Observations:** 20,989 total observations tracked (2,191 MODIS, 18,798 VIIRS), matching 100.0% of clustered observations with zero dropped detections.
+   - **Computational Benchmark:** 9.26 seconds wall-clock runtime, 4.46 MB peak traced memory, 201.98 MB process RSS.
 
 ## 15. Expected Output
 

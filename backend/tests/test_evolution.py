@@ -312,10 +312,10 @@ def test_stored_artifacts_consistency():
     n_v_tracks = con.execute(f"SELECT COUNT(*) FROM read_parquet('{mgr.viirs_tracks_file.as_posix()}')").fetchone()[0]
     n_mems = con.execute(f"SELECT COUNT(*) FROM read_parquet('{mgr.memberships_file.as_posix()}')").fetchone()[0]
     
-    assert n_m_rels == 1065
-    assert n_v_rels == 3996
-    assert n_m_tracks == 38
-    assert n_v_tracks == 37
+    assert n_m_rels == 303
+    assert n_v_rels == 884
+    assert n_m_tracks == 58
+    assert n_v_tracks == 57
     # Total clusters represented in membership: 310 MODIS + 670 VIIRS = 980 total clusters!
     assert n_mems == 980
     
@@ -336,7 +336,7 @@ def test_api_evolution_endpoints(client):
     res_tracks = client.get("/api/evolution/tracks?limit=10")
     assert res_tracks.status_code == 200
     tracks_data = res_tracks.json()
-    assert tracks_data["total_count"] == 75
+    assert tracks_data["total_count"] == 115
     assert len(tracks_data["items"]) == 10
     
     first_track_id = tracks_data["items"][0]["track_id"]
@@ -360,7 +360,7 @@ def test_api_evolution_endpoints(client):
     # 6. Relationships
     res_rels = client.get("/api/evolution/relationships?limit=20")
     assert res_rels.status_code == 200
-    assert res_rels.json()["total_count"] == 5061
+    assert res_rels.json()["total_count"] == 1187
     assert len(res_rels.json()["items"]) == 20
     
     # 7. Map data
@@ -373,3 +373,143 @@ def test_api_evolution_endpoints(client):
     res_exp = client.get("/api/evolution/experiments")
     assert res_exp.status_code == 200
     assert len(res_exp.json()) >= 1
+
+
+# ==============================================================================
+# PHASE 6.1 AUDIT & VALIDATION TESTS
+# ==============================================================================
+
+def test_sop_candidate_selection_removes_transitive_shortcuts():
+    """Verify Successive Observation Period (SOP) removes multi-hop skip-overpass shortcut edges."""
+    c1 = {
+        "cluster_id": "CLUST-MODIS-00001", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 00:00:00+00:00", "end_timestamp_utc": "2025-08-01 00:05:00+00:00",
+        "observation_count": 5, "sum_frp_mw": 100.0, "max_spatial_spread_km": 0.5,
+    }
+    c2 = {
+        "cluster_id": "CLUST-MODIS-00002", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 06:00:00+00:00", "end_timestamp_utc": "2025-08-01 06:05:00+00:00",
+        "observation_count": 6, "sum_frp_mw": 110.0, "max_spatial_spread_km": 0.5,
+    }
+    c3 = {
+        "cluster_id": "CLUST-MODIS-00003", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 18:00:00+00:00", "end_timestamp_utc": "2025-08-01 18:05:00+00:00",
+        "observation_count": 7, "sum_frp_mw": 120.0, "max_spatial_spread_km": 0.5,
+    }
+
+    # 1. Unconstrained all_in_window strategy: C1 -> C2, C1 -> C3 (shortcut!), C2 -> C3
+    dense_engine = TemporalEventEvolutionEngine(EvolutionConfig(
+        max_temporal_gap_hours=24.0, max_spatial_distance_km=5.0,
+        candidate_selection_strategy="all_in_window"
+    ))
+    dense_rels = dense_engine.find_temporal_relationships([c1, c2, c3], "MODIS")
+    assert len(dense_rels) == 3
+    dense_endpoints = [(r["source_cluster_id"], r["target_cluster_id"]) for r in dense_rels]
+    assert ("CLUST-MODIS-00001", "CLUST-MODIS-00003") in dense_endpoints
+
+    # 2. Successive Observation Period (SOP) strategy: C1 only links to C2 (at 6h). C2 links to C3 (at 18h).
+    sop_engine = TemporalEventEvolutionEngine(EvolutionConfig(
+        max_temporal_gap_hours=24.0, max_spatial_distance_km=5.0,
+        candidate_selection_strategy="successive_period"
+    ))
+    sop_rels = sop_engine.find_temporal_relationships([c1, c2, c3], "MODIS")
+    assert len(sop_rels) == 2
+    sop_endpoints = [(r["source_cluster_id"], r["target_cluster_id"]) for r in sop_rels]
+    assert ("CLUST-MODIS-00001", "CLUST-MODIS-00002") in sop_endpoints
+    assert ("CLUST-MODIS-00002", "CLUST-MODIS-00003") in sop_endpoints
+    # Shortcut C1 -> C3 is eliminated!
+    assert ("CLUST-MODIS-00001", "CLUST-MODIS-00003") not in sop_endpoints
+
+
+def test_extent_aware_centroid_cap():
+    """Verify hard centroid separation cap prevents excessive spatial leaps in extent-aware mode."""
+    # Distance: centroid separation is 8.0 km.
+    # Spreads: c1 has 2.0 km spread, c2 has 2.0 km spread.
+    # Effective distance: 8.0 - 4.0 = 4.0 km <= max_spatial_distance_km (5.0 km).
+    # But centroid distance (8.0 km) > max_centroid_cap_km (7.5 km).
+    lat_step = 8.0 / 111.0  # Approx 8.0 km latitude offset
+    c1 = {
+        "cluster_id": "CLUST-MODIS-00001", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 00:00:00+00:00", "end_timestamp_utc": "2025-08-01 00:05:00+00:00",
+        "observation_count": 10, "sum_frp_mw": 200.0, "max_spatial_spread_km": 2.0,
+    }
+    c2 = {
+        "cluster_id": "CLUST-MODIS-00002", "sensor": "MODIS",
+        "centroid_latitude": 55.0 + lat_step, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 06:00:00+00:00", "end_timestamp_utc": "2025-08-01 06:05:00+00:00",
+        "observation_count": 10, "sum_frp_mw": 210.0, "max_spatial_spread_km": 2.0,
+    }
+
+    # With cap at 7.5 km: rejected
+    engine_capped = TemporalEventEvolutionEngine(EvolutionConfig(
+        max_temporal_gap_hours=24.0, max_spatial_distance_km=5.0,
+        use_extent_aware=True, max_centroid_cap_km=7.5,
+    ))
+    rels_capped = engine_capped.find_temporal_relationships([c1, c2], "MODIS")
+    assert len(rels_capped) == 0
+
+    # With cap relaxed to 10.0 km: admitted
+    engine_relaxed = TemporalEventEvolutionEngine(EvolutionConfig(
+        max_temporal_gap_hours=24.0, max_spatial_distance_km=5.0,
+        use_extent_aware=True, max_centroid_cap_km=10.0,
+    ))
+    rels_relaxed = engine_relaxed.find_temporal_relationships([c1, c2], "MODIS")
+    assert len(rels_relaxed) == 1
+
+
+def test_cross_sensor_evidence_metrics():
+    """Verify track-level cross-sensor evidence count and rate calculations."""
+    engine = TemporalEventEvolutionEngine()
+    c1 = {
+        "cluster_id": "CLUST-MODIS-00001", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 00:00:00+00:00", "end_timestamp_utc": "2025-08-01 00:05:00+00:00",
+        "observation_count": 5, "sum_frp_mw": 100.0, "max_spatial_spread_km": 0.5,
+    }
+    c2 = {
+        "cluster_id": "CLUST-MODIS-00002", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 06:00:00+00:00", "end_timestamp_utc": "2025-08-01 06:05:00+00:00",
+        "observation_count": 6, "sum_frp_mw": 110.0, "max_spatial_spread_km": 0.5,
+    }
+    rels = engine.find_temporal_relationships([c1, c2], "MODIS")
+    
+    # Phase 5 cross-sensor association supporting c1 only
+    mock_cross = [{"modis_cluster_id": "CLUST-MODIS-00001", "viirs_cluster_id": "CLUST-VIIRS-00001"}]
+    
+    tracks, mems, _ = engine.build_event_tracks([c1, c2], rels, "MODIS", mock_cross)
+    assert len(tracks) == 1
+    track = tracks[0]
+    assert track["clusters_with_cross_sensor_evidence_count"] == 1
+    assert track["cross_sensor_evidence_rate_pct"] == 50.0  # 1 out of 2 clusters
+    
+    # Membership check
+    m1 = next(m for m in mems if m["cluster_id"] == "CLUST-MODIS-00001")
+    m2 = next(m for m in mems if m["cluster_id"] == "CLUST-MODIS-00002")
+    assert m1["has_cross_sensor_evidence"] is True
+    assert m2["has_cross_sensor_evidence"] is False
+
+
+def test_touching_temporal_intervals_gap_zero():
+    """Verify touching temporal intervals (gap = 0.0 hours) are accepted."""
+    engine = TemporalEventEvolutionEngine(EvolutionConfig(max_temporal_gap_hours=24.0, max_spatial_distance_km=5.0))
+    c1 = {
+        "cluster_id": "CLUST-MODIS-00001", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 12:00:00+00:00", "end_timestamp_utc": "2025-08-01 12:05:00+00:00",
+        "observation_count": 5, "sum_frp_mw": 100.0, "max_spatial_spread_km": 0.5,
+    }
+    c2 = {
+        "cluster_id": "CLUST-MODIS-00002", "sensor": "MODIS",
+        "centroid_latitude": 55.0, "centroid_longitude": -105.0,
+        "start_timestamp_utc": "2025-08-01 12:05:00+00:00", "end_timestamp_utc": "2025-08-01 12:10:00+00:00",
+        "observation_count": 6, "sum_frp_mw": 110.0, "max_spatial_spread_km": 0.5,
+    }
+    rels = engine.find_temporal_relationships([c1, c2], "MODIS")
+    assert len(rels) == 1
+    assert rels[0]["temporal_gap_hours"] == 0.0
+

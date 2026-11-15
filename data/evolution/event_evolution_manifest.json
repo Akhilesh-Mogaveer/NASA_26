@@ -1,6 +1,6 @@
 {
-  "last_completed_experiment": "regional_boreal_evolution",
-  "executed_at": "2026-11-15T04:51:34Z",
+  "last_completed_experiment": "regional_boreal_evolution_sop",
+  "executed_at": "2026-11-15T05:27:36Z",
   "artifacts": {
     "modis_relationships": "data\\evolution\\modis_temporal_relationships.parquet",
     "viirs_relationships": "data\\evolution\\viirs_temporal_relationships.parquet",

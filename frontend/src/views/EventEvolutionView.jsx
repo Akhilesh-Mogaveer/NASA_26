@@ -107,6 +107,8 @@ export default function EventEvolutionView() {
     max_temporal_gap_hours: 24.0,
     max_spatial_distance_km: 5.0,
     use_extent_aware: true,
+    max_centroid_cap_km: 7.5,
+    candidate_selection_strategy: 'successive_period',
     ambiguity_delta_threshold: 0.15,
     experiment_name: 'regional_boreal_evolution',
   });
@@ -380,11 +382,15 @@ export default function EventEvolutionView() {
                 </div>
                 <div className="flex justify-between">
                   <span>Clusters Represented:</span>
-                  <span className="text-white font-medium">{summary.modis.clusters_represented} / 310 (100%)</span>
+                  <span className="text-white font-medium">{summary.modis.clusters_represented}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Isolated Single Clusters:</span>
                   <span className="text-amber-400 font-medium">{summary.modis.isolated_clusters_count} ({summary.modis.isolated_cluster_rate_pct}%)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cross-Sensor Evidence:</span>
+                  <span className="text-emerald-400 font-medium">{summary.modis.clusters_with_cross_sensor_evidence_count || 0} ({summary.modis.cross_sensor_evidence_rate_pct || 0}%)</span>
                 </div>
               </div>
             </Card>
@@ -405,11 +411,15 @@ export default function EventEvolutionView() {
                 </div>
                 <div className="flex justify-between">
                   <span>Clusters Represented:</span>
-                  <span className="text-white font-medium">{summary.viirs.clusters_represented} / 670 (100%)</span>
+                  <span className="text-white font-medium">{summary.viirs.clusters_represented}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Isolated Single Clusters:</span>
                   <span className="text-cyan-400 font-medium">{summary.viirs.isolated_clusters_count} ({summary.viirs.isolated_cluster_rate_pct}%)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cross-Sensor Evidence:</span>
+                  <span className="text-emerald-400 font-medium">{summary.viirs.clusters_with_cross_sensor_evidence_count || 0} ({summary.viirs.cross_sensor_evidence_rate_pct || 0}%)</span>
                 </div>
               </div>
             </Card>
@@ -1010,7 +1020,7 @@ export default function EventEvolutionView() {
               Executes same-sensor spatial-temporal continuity candidate generation and track construction using DuckDB and spherical Haversine distance.
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
               <div>
                 <label className="text-gray-400 block mb-1">Max Temporal Gap (hours)</label>
                 <input
@@ -1038,7 +1048,32 @@ export default function EventEvolutionView() {
               </div>
 
               <div>
-                <label className="text-gray-400 block mb-1">Ambiguity Delta Threshold</label>
+                <label className="text-gray-400 block mb-1">Max Centroid Cap (km)</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  min="1.0"
+                  max="50.0"
+                  value={runConfig.max_centroid_cap_km}
+                  onChange={(e) => setRunConfig({ ...runConfig, max_centroid_cap_km: parseFloat(e.target.value) || 7.5 })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-gray-400 block mb-1">Candidate Strategy</label>
+                <select
+                  value={runConfig.candidate_selection_strategy}
+                  onChange={(e) => setRunConfig({ ...runConfig, candidate_selection_strategy: e.target.value })}
+                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                >
+                  <option value="successive_period">Successive Period (SOP)</option>
+                  <option value="all_in_window">All in Window (Dense)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-gray-400 block mb-1">Ambiguity Delta</label>
                 <input
                   type="number"
                   step="0.05"

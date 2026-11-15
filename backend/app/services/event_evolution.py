@@ -37,6 +37,9 @@ class EvolutionConfig:
     max_temporal_gap_hours: float = 24.0
     max_spatial_distance_km: float = 5.0
     use_extent_aware: bool = True
+    max_centroid_cap_km: float = 7.5  # Hard cap on centroid separation in extent-aware mode to prevent excessive spatial leap
+    candidate_selection_strategy: str = "successive_period"  # "successive_period" (links to next observed overpass) or "all_in_window" (dense multi-hop)
+    sop_window_tolerance_hours: float = 0.5  # 30-minute grouping window for clusters observed in the same overpass
     ambiguity_delta_threshold: float = 0.15
 
 
@@ -138,6 +141,8 @@ class TemporalEventEvolutionEngine:
             if idx_start >= idx_end:
                 continue
 
+            candidates_for_i = []
+
             for j in range(idx_start, idx_end):
                 c_j = cluster_data[j]
 
@@ -154,13 +159,13 @@ class TemporalEventEvolutionEngine:
                 if c_j["start_epoch"] >= t_end_i:
                     gap_sec = c_j["start_epoch"] - t_end_i
                 else:
-                    # Overlapping temporal clusters from different platforms: gap is forward interval
+                    # Overlapping temporal clusters: forward interval
                     gap_sec = c_j["start_epoch"] - t_start_i
 
                 gap_hours = round(gap_sec / 3600.0, 3)
 
-                # Boundary check: 0 < gap_hours <= max_temporal_gap_hours
-                if gap_hours <= 0.0 or gap_hours > self.config.max_temporal_gap_hours:
+                # Boundary check: gap_hours >= 0.0 and <= max_temporal_gap_hours (handles touching intervals gap=0)
+                if gap_hours < 0.0 or gap_hours > self.config.max_temporal_gap_hours:
                     continue
 
                 # Spherical Haversine centroid distance
@@ -177,9 +182,11 @@ class TemporalEventEvolutionEngine:
                 effective_dist = round(effective_dist, 3)
 
                 # Spatial filter: centroid distance must be within max_spatial_distance_km
-                # (or effective distance if extent-aware is enabled and centroid is slightly beyond)
+                # Or if extent-aware: effective distance within max_spatial_distance_km AND centroid distance within max_centroid_cap_km
                 if self.config.use_extent_aware:
-                    spatial_matched = (dist_centroid <= self.config.max_spatial_distance_km) or (effective_dist <= self.config.max_spatial_distance_km)
+                    spatial_matched = (dist_centroid <= self.config.max_spatial_distance_km) or (
+                        effective_dist <= self.config.max_spatial_distance_km and dist_centroid <= self.config.max_centroid_cap_km
+                    )
                     method = "extent_aware_haversine"
                 else:
                     spatial_matched = (dist_centroid <= self.config.max_spatial_distance_km)
@@ -189,11 +196,6 @@ class TemporalEventEvolutionEngine:
                     continue
 
                 # Composite Heuristic Temporal Score in [0.0, 1.0]:
-                # Components:
-                # - Spatial proximity (40%): 1 - dist_centroid / max_spatial_distance
-                # - Temporal proximity (35%): 1 - gap_hours / max_temporal_gap
-                # - Extent compatibility (15%): 1 - effective_dist / max_spatial_distance
-                # - Snapshot FRP compatibility (10%): min(FRP) / max(FRP)
                 s_spatial = max(0.0, 1.0 - (dist_centroid / max(1e-6, self.config.max_spatial_distance_km)))
                 s_temporal = max(0.0, 1.0 - (gap_hours / max(1e-6, self.config.max_temporal_gap_hours)))
                 s_extent = max(0.0, 1.0 - (effective_dist / max(1e-6, self.config.max_spatial_distance_km)))
@@ -203,7 +205,7 @@ class TemporalEventEvolutionEngine:
                 if frp_i > 0 and frp_j > 0:
                     s_frp = min(frp_i, frp_j) / max(frp_i, frp_j)
                 else:
-                    s_frp = 0.5  # Neutral default when FRP is 0
+                    s_frp = 0.5  # Neutral default when FRP is 0 or unavailable
 
                 heuristic_score = round(
                     (0.40 * s_spatial) +
@@ -219,7 +221,39 @@ class TemporalEventEvolutionEngine:
                 ev_j = cross_sensor_evidence_map.get(c_j["cluster_id"], set())
                 shared_counterparts = ev_i.intersection(ev_j)
                 supporting_cross_sensor_count = len(shared_counterparts)
+                src_has_cross = len(ev_i) > 0
+                tgt_has_cross = len(ev_j) > 0
 
+                candidates_for_i.append({
+                    "c_j": c_j,
+                    "gap_hours": gap_hours,
+                    "dist_centroid": dist_centroid,
+                    "effective_dist": effective_dist,
+                    "method": method,
+                    "heuristic_score": heuristic_score,
+                    "supporting_cross_sensor_count": supporting_cross_sensor_count,
+                    "source_has_cross_evidence": src_has_cross,
+                    "target_has_cross_evidence": tgt_has_cross,
+                    "start_epoch": c_j["start_epoch"],
+                })
+
+            if not candidates_for_i:
+                continue
+
+            # Candidate selection strategy:
+            # If successive_period (default): retain candidates occurring at the earliest subsequent observation period
+            if self.config.candidate_selection_strategy == "successive_period":
+                earliest_next_epoch = min(cand["start_epoch"] for cand in candidates_for_i)
+                tol_sec = self.config.sop_window_tolerance_hours * 3600.0
+                selected_candidates = [
+                    cand for cand in candidates_for_i
+                    if cand["start_epoch"] <= earliest_next_epoch + tol_sec
+                ]
+            else:
+                selected_candidates = candidates_for_i
+
+            for cand in selected_candidates:
+                c_j = cand["c_j"]
                 rel_id = f"TEMP-{sensor}-{c_i['cluster_id']}-{c_j['cluster_id']}"
 
                 raw_relationships.append({
@@ -231,21 +265,23 @@ class TemporalEventEvolutionEngine:
                     "source_end_utc": c_i["cluster"]["end_timestamp_utc"],
                     "target_start_utc": c_j["cluster"]["start_timestamp_utc"],
                     "target_end_utc": c_j["cluster"]["end_timestamp_utc"],
-                    "temporal_gap_hours": gap_hours,
-                    "centroid_distance_km": dist_centroid,
-                    "effective_distance_km": effective_dist,
-                    "spatial_association_method": method,
+                    "temporal_gap_hours": cand["gap_hours"],
+                    "centroid_distance_km": cand["dist_centroid"],
+                    "effective_distance_km": cand["effective_dist"],
+                    "spatial_association_method": cand["method"],
                     "source_observation_count": c_i["obs_count"],
                     "target_observation_count": c_j["obs_count"],
-                    "source_sum_frp_mw": round(frp_i, 2),
-                    "target_sum_frp_mw": round(frp_j, 2),
-                    "delta_sum_frp_mw": round(frp_j - frp_i, 2),
+                    "source_sum_frp_mw": round(c_i["frp"], 2),
+                    "target_sum_frp_mw": round(c_j["frp"], 2),
+                    "delta_sum_frp_mw": round(c_j["frp"] - c_i["frp"], 2),
                     "source_centroid_lat": c_i["lat"],
                     "source_centroid_lon": c_i["lon"],
                     "target_centroid_lat": c_j["lat"],
                     "target_centroid_lon": c_j["lon"],
-                    "heuristic_score": heuristic_score,
-                    "supporting_cross_sensor_count": supporting_cross_sensor_count,
+                    "heuristic_score": cand["heuristic_score"],
+                    "supporting_cross_sensor_count": cand["supporting_cross_sensor_count"],
+                    "source_has_cross_evidence": cand["source_has_cross_evidence"],
+                    "target_has_cross_evidence": cand["target_has_cross_evidence"],
                     "_src_epoch": c_i["start_epoch"],
                     "_tgt_epoch": c_j["start_epoch"],
                 })
@@ -308,6 +344,7 @@ class TemporalEventEvolutionEngine:
         clusters: List[Dict[str, Any]],
         relationships: List[Dict[str, Any]],
         sensor: str,
+        cross_sensor_associations: Optional[List[Dict[str, Any]]] = None,
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Construct weakly connected components (event tracks), memberships, and lineage records.
         
@@ -315,6 +352,7 @@ class TemporalEventEvolutionEngine:
             clusters: List of valid clusters for this sensor.
             relationships: List of directed temporal relationships.
             sensor: Sensor name ('MODIS' or 'VIIRS').
+            cross_sensor_associations: Optional cross-sensor event associations from Phase 5.
             
         Returns:
             tracks: List of temporal event track summary dictionaries.
@@ -329,6 +367,17 @@ class TemporalEventEvolutionEngine:
         ]
 
         cluster_map = {c["cluster_id"]: c for c in valid_clusters}
+
+        # Cross-sensor cluster lookup set
+        cross_sensor_cluster_set: Set[str] = set()
+        if cross_sensor_associations:
+            for assoc in cross_sensor_associations:
+                if sensor == "MODIS":
+                    cid = assoc.get("modis_cluster_id")
+                else:
+                    cid = assoc.get("viirs_cluster_id")
+                if cid:
+                    cross_sensor_cluster_set.add(cid)
 
         # Build undirected adjacency list for weakly connected components
         adj: Dict[str, Set[str]] = {c["cluster_id"]: set() for c in valid_clusters}
@@ -470,6 +519,10 @@ class TemporalEventEvolutionEngine:
                 has_ambiguity = False
                 cross_sensor_assocs_count = 0
 
+            # Cross-sensor cluster support metrics
+            clusters_with_cross_evidence = sum(1 for cid in comp if cid in cross_sensor_cluster_set)
+            cross_sensor_evidence_rate = round(100.0 * clusters_with_cross_evidence / max(1, n_clusters), 1)
+
             # FRP and observation totals
             obs_counts = [int(c.get("observation_count", 0)) for c in comp_clusters]
             total_observations = sum(obs_counts)
@@ -504,6 +557,8 @@ class TemporalEventEvolutionEngine:
                 "mean_heuristic_score": mean_score,
                 "has_ambiguity": has_ambiguity,
                 "cross_sensor_associations_count": cross_sensor_assocs_count,
+                "clusters_with_cross_sensor_evidence_count": clusters_with_cross_evidence,
+                "cross_sensor_evidence_rate_pct": cross_sensor_evidence_rate,
             })
 
             # Record cluster memberships
@@ -520,6 +575,7 @@ class TemporalEventEvolutionEngine:
                     "centroid_longitude": float(c["centroid_longitude"]),
                     "sum_frp_mw": float(c.get("sum_frp_mw", 0.0)),
                     "primary_satellite": str(c.get("primary_satellite", "UNKNOWN")),
+                    "has_cross_sensor_evidence": (cid in cross_sensor_cluster_set),
                     "in_degree": in_deg[cid],
                     "out_degree": out_deg[cid],
                     "predecessors": ",".join(preds[cid]),

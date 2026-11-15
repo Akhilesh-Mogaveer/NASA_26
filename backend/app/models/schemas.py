@@ -698,6 +698,8 @@ class EvolutionRunRequest(BaseModel):
     max_temporal_gap_hours: float = Field(24.0, ge=0.5, le=168.0, description="Maximum temporal gap in hours between successive cluster detections")
     max_spatial_distance_km: float = Field(5.0, ge=0.5, le=50.0, description="Maximum centroid or extent distance in km")
     use_extent_aware: bool = Field(True, description="Account for cluster spatial extent when evaluating continuity")
+    max_centroid_cap_km: float = Field(7.5, ge=1.0, le=50.0, description="Hard upper bound on centroid distance when using extent-aware distance")
+    candidate_selection_strategy: str = Field("successive_period", description="Candidate selection strategy: 'successive_period' (links to immediate next observed overpass) or 'all_in_window' (exploratory dense graph)")
     ambiguity_delta_threshold: float = Field(0.15, ge=0.01, le=0.5, description="Score delta threshold to flag competing lineage links")
     experiment_name: str = Field("regional_boreal_evolution", description="Unique experiment label")
 
@@ -741,6 +743,8 @@ class TemporalRelationshipItem(BaseModel):
     is_ambiguous: bool
     track_id: Optional[str] = None
     supporting_cross_sensor_count: int = 0
+    source_has_cross_evidence: bool = False
+    target_has_cross_evidence: bool = False
 
 
 class TemporalRelationshipsResponse(BaseModel):
@@ -775,6 +779,8 @@ class EventTrackItem(BaseModel):
     mean_heuristic_score: float
     has_ambiguity: bool
     cross_sensor_associations_count: int
+    clusters_with_cross_sensor_evidence_count: int = 0
+    cross_sensor_evidence_rate_pct: float = 0.0
 
 
 class EventTracksResponse(BaseModel):
@@ -802,6 +808,7 @@ class TrackTimelineItem(BaseModel):
     out_degree: int
     predecessors: List[str] = []
     successors: List[str] = []
+    has_cross_sensor_evidence: bool = False
     temporal_gap_to_prev_hours: Optional[float] = None
     centroid_dist_to_prev_km: Optional[float] = None
     delta_frp_from_prev_mw: Optional[float] = None

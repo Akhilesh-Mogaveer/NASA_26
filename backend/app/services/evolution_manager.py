@@ -78,6 +78,8 @@ class EvolutionManager:
         max_temporal_gap_hours: float = 24.0,
         max_spatial_distance_km: float = 5.0,
         use_extent_aware: bool = True,
+        max_centroid_cap_km: float = 7.5,
+        candidate_selection_strategy: str = "successive_period",
         ambiguity_delta_threshold: float = 0.15,
         experiment_name: str = "regional_boreal_evolution",
     ) -> Dict[str, Any]:
@@ -90,6 +92,8 @@ class EvolutionManager:
             max_temporal_gap_hours=max_temporal_gap_hours,
             max_spatial_distance_km=max_spatial_distance_km,
             use_extent_aware=use_extent_aware,
+            max_centroid_cap_km=max_centroid_cap_km,
+            candidate_selection_strategy=candidate_selection_strategy,
             ambiguity_delta_threshold=ambiguity_delta_threshold,
         )
 
@@ -114,11 +118,11 @@ class EvolutionManager:
 
         # 2. Process MODIS temporal continuity and tracks
         modis_rels = engine.find_temporal_relationships(modis_clusters, "MODIS", cross_assocs)
-        modis_tracks, modis_mems, modis_lineage = engine.build_event_tracks(modis_clusters, modis_rels, "MODIS")
+        modis_tracks, modis_mems, modis_lineage = engine.build_event_tracks(modis_clusters, modis_rels, "MODIS", cross_assocs)
 
         # 3. Process VIIRS temporal continuity and tracks
         viirs_rels = engine.find_temporal_relationships(viirs_clusters, "VIIRS", cross_assocs)
-        viirs_tracks, viirs_mems, viirs_lineage = engine.build_event_tracks(viirs_clusters, viirs_rels, "VIIRS")
+        viirs_tracks, viirs_mems, viirs_lineage = engine.build_event_tracks(viirs_clusters, viirs_rels, "VIIRS", cross_assocs)
 
         # Combine memberships and lineage
         all_memberships = modis_mems + viirs_mems
@@ -183,6 +187,8 @@ class EvolutionManager:
 
             total_obs = sum(t["observation_count"] for t in tracks)
             total_frp = sum(t["sum_snapshot_frp_mw"] for t in tracks)
+            cross_clusters_count = sum(t.get("clusters_with_cross_sensor_evidence_count", 0) for t in tracks)
+            cross_cluster_rate = round(100.0 * cross_clusters_count / max(1, clusters_count), 2)
 
             return {
                 "clusters_represented": clusters_count,
@@ -197,6 +203,8 @@ class EvolutionManager:
                 "mean_observed_track_duration_hours": mean_duration,
                 "total_observations_tracked": total_obs,
                 "total_snapshot_frp_mw": round(total_frp, 2),
+                "clusters_with_cross_sensor_evidence_count": cross_clusters_count,
+                "cross_sensor_evidence_rate_pct": cross_cluster_rate,
                 "track_type_breakdown": track_types,
                 "classification_breakdown": class_counts,
             }
@@ -216,6 +224,8 @@ class EvolutionManager:
                 "max_temporal_gap_hours": max_temporal_gap_hours,
                 "max_spatial_distance_km": max_spatial_distance_km,
                 "use_extent_aware": use_extent_aware,
+                "max_centroid_cap_km": max_centroid_cap_km,
+                "candidate_selection_strategy": candidate_selection_strategy,
                 "ambiguity_delta_threshold": ambiguity_delta_threshold,
             },
             "benchmarks": {
@@ -313,6 +323,8 @@ class EvolutionManager:
                     max_temporal_gap_hours=params.get("max_temporal_gap_hours", 24.0),
                     max_spatial_distance_km=params.get("max_spatial_distance_km", 5.0),
                     use_extent_aware=params.get("use_extent_aware", True),
+                    max_centroid_cap_km=params.get("max_centroid_cap_km", 7.5),
+                    candidate_selection_strategy=params.get("candidate_selection_strategy", "successive_period"),
                     ambiguity_delta_threshold=params.get("ambiguity_delta_threshold", 0.15),
                     experiment_name=params.get("experiment_name", "regional_boreal_evolution"),
                 )
@@ -479,6 +491,7 @@ class EvolutionManager:
                 "out_degree": int(r.get("out_degree", 0)),
                 "predecessors": preds,
                 "successors": succs,
+                "has_cross_sensor_evidence": bool(r.get("has_cross_sensor_evidence", False)),
                 "temporal_gap_to_prev_hours": time_gap,
                 "centroid_dist_to_prev_km": dist_gap,
                 "delta_frp_from_prev_mw": frp_diff,
