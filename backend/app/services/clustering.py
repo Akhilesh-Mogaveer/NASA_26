@@ -131,10 +131,27 @@ class SpatialTemporalDBSCAN:
         if "epoch_seconds" not in work_df.columns:
             work_df["epoch_seconds"] = work_df["timestamp_utc"].apply(parse_timestamp_to_epoch)
 
-        # Drop invalid coordinates or timestamps
-        work_df = work_df.dropna(subset=["epoch_seconds", "latitude", "longitude"]).copy()
+        # Collect invalid observations as noise to guarantee conservation of observations
+        noise_records: List[Dict[str, Any]] = []
+        invalid_mask = work_df["epoch_seconds"].isna() | work_df["latitude"].isna() | work_df["longitude"].isna()
+        if invalid_mask.any():
+            invalid_df = work_df[invalid_mask]
+            for _, inv_row in invalid_df.iterrows():
+                noise_records.append({
+                    "observation_id": str(inv_row["observation_id"]),
+                    "cluster_id": "NOISE",
+                    "sensor": self.sensor,
+                    "point_role": "noise",
+                    "latitude": float(inv_row["latitude"]) if pd.notna(inv_row["latitude"]) else 0.0,
+                    "longitude": float(inv_row["longitude"]) if pd.notna(inv_row["longitude"]) else 0.0,
+                    "timestamp_utc": str(inv_row.get("timestamp_utc", "")),
+                    "frp": float(inv_row["frp"]) if "frp" in inv_row and pd.notna(inv_row["frp"]) else 0.0,
+                    "satellite": str(inv_row.get("satellite", "UNKNOWN")),
+                })
+            work_df = work_df[~invalid_mask].copy()
+
         if work_df.empty:
-            return [], [], []
+            return [], [], noise_records
 
         # Sort deterministically by epoch, latitude, longitude, observation_id
         work_df = work_df.sort_values(
@@ -155,7 +172,7 @@ class SpatialTemporalDBSCAN:
         coords_rad = np.column_stack([lat_rad, lon_rad])
 
         # Step 1: Compute spatial-temporal neighborhoods for all points
-        # Using binary search on timestamps combined with BallTree on temporal window candidates
+        # Using binary search on timestamps combined with vectorized Haversine on temporal candidate subsets
         neighborhoods: List[List[int]] = [[] for _ in range(n_points)]
 
         for i in range(n_points):
@@ -171,25 +188,17 @@ class SpatialTemporalDBSCAN:
                 continue
 
             subset_coords = coords_rad[idx_start:idx_end]
-            sub_len = idx_end - idx_start
 
-            pt = coords_rad[i:i+1]
-
-            if sub_len > 30:
-                tree = BallTree(subset_coords, metric="haversine")
-                indices = tree.query_radius(pt, r=self.max_radius_rad)[0]
-                matched_indices = [idx_start + int(idx) for idx in indices]
-            else:
-                # Direct vectorized Haversine
-                d_lat = subset_coords[:, 0] - coords_rad[i, 0]
-                d_lon = subset_coords[:, 1] - coords_rad[i, 1]
-                d_lon = (d_lon + np.pi) % (2.0 * np.pi) - np.pi
-                a = (np.sin(d_lat / 2.0) ** 2 +
-                     np.cos(coords_rad[i, 0]) * np.cos(subset_coords[:, 0]) * (np.sin(d_lon / 2.0) ** 2))
-                a = np.clip(a, 0.0, 1.0)
-                dist_rad = 2.0 * np.arctan2(np.sqrt(a), np.sqrt(1.0 - a))
-                matched_sub = np.where(dist_rad <= self.max_radius_rad)[0]
-                matched_indices = [idx_start + int(idx) for idx in matched_sub]
+            # Direct vectorized Haversine across temporal slice
+            d_lat = subset_coords[:, 0] - coords_rad[i, 0]
+            d_lon = subset_coords[:, 1] - coords_rad[i, 1]
+            d_lon = (d_lon + np.pi) % (2.0 * np.pi) - np.pi
+            a = (np.sin(d_lat / 2.0) ** 2 +
+                 np.cos(coords_rad[i, 0]) * np.cos(subset_coords[:, 0]) * (np.sin(d_lon / 2.0) ** 2))
+            a = np.clip(a, 0.0, 1.0)
+            dist_rad = 2.0 * np.arctan2(np.sqrt(a), np.sqrt(1.0 - a))
+            matched_sub = np.where(dist_rad <= self.max_radius_rad)[0]
+            matched_indices = [idx_start + int(idx) for idx in matched_sub]
 
             # Ensure self is included
             if i not in matched_indices:
@@ -243,7 +252,6 @@ class SpatialTemporalDBSCAN:
         # Step 5: Build Cluster Summaries and Memberships
         raw_clusters: List[Dict[str, Any]] = []
         memberships: List[Dict[str, Any]] = []
-        noise_records: List[Dict[str, Any]] = []
 
         for cid in range(current_cluster_id):
             indices = np.where(cluster_labels == cid)[0]
