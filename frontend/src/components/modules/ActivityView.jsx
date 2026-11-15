@@ -1,31 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Radio, 
-  Calendar, 
-  TrendingUp, 
-  Clock, 
   Sun, 
   Moon, 
-  AlertCircle,
-  HelpCircle
+  AlertCircle
 } from 'lucide-react';
 import {
   ResponsiveContainer,
-  ComposedChart,
   BarChart,
-  LineChart,
+  AreaChart,
   Bar,
-  Line,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  AreaChart,
-  Area
+  Legend
 } from 'recharts';
 import Card from '../common/Card';
 import StatusBadge from '../common/StatusBadge';
+import GlassTooltip from '../common/GlassTooltip';
+import LoadingState from '../common/LoadingState';
+import { SENSOR_COLORS, CHART_THEME } from '../../theme/tokens';
 import { getTemporalAnalytics } from '../../api/client';
 
 export default function ActivityView() {
@@ -58,7 +54,7 @@ export default function ActivityView() {
   return (
     <div className="space-y-6">
       {/* View Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-space-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
         <div>
           <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             <Radio className="w-5 h-5 text-modis" />
@@ -76,11 +72,9 @@ export default function ActivityView() {
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-xs text-space-400 animate-pulse">
-          Loading temporal analytics data from DuckDB backend...
-        </div>
+        <LoadingState message="Loading temporal analytics data from DuckDB backend..." />
       ) : error ? (
-        <div className="p-6 rounded-xl bg-rose-950/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
+        <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
           <span>Error loading temporal data: {error}</span>
         </div>
@@ -148,16 +142,23 @@ export default function ActivityView() {
             <div className="h-72 w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthly} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="month" stroke="#64748b" tick={{ fontSize: 11 }} />
-                  <YAxis stroke="#64748b" tickFormatter={formatThousands} tick={{ fontSize: 11 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke={CHART_THEME.axisStroke} 
+                    tick={{ fontSize: CHART_THEME.tickFontSize, fill: CHART_THEME.tickText }} 
+                  />
+                  <YAxis 
+                    stroke={CHART_THEME.axisStroke} 
+                    tickFormatter={formatThousands} 
+                    tick={{ fontSize: CHART_THEME.tickFontSize, fill: CHART_THEME.tickText }} 
+                  />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value) => [value.toLocaleString(), 'Hot Spots']}
+                    content={<GlassTooltip formatter={(value) => [value.toLocaleString(), 'Hot Spots']} />}
                   />
                   <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                  <Bar dataKey="modis_count" name="MODIS C6.1 (1km)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="viirs_count" name="VIIRS C2 (375m)" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="modis_count" name="MODIS C6.1 (1km)" fill={SENSOR_COLORS.modis} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="viirs_count" name="VIIRS C2 (375m)" fill={SENSOR_COLORS.viirs} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -174,30 +175,43 @@ export default function ActivityView() {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={hourly} margin={{ top: 10, right: 20, left: 10, bottom: 20 }}>
                     <defs>
-                      <linearGradient id="colorViirs" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#f97316" stopOpacity={0.05}/>
+                      <linearGradient id="activityDiurnalViirs" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={SENSOR_COLORS.viirs} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={SENSOR_COLORS.viirs} stopOpacity={0.05}/>
                       </linearGradient>
-                      <linearGradient id="colorModis" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05}/>
+                      <linearGradient id="activityDiurnalModis" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={SENSOR_COLORS.modis} stopOpacity={0.8}/>
+                        <stop offset="95%" stopColor={SENSOR_COLORS.modis} stopOpacity={0.05}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="hour_utc" stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={(h) => `${h}:00`} />
-                    <YAxis stroke="#64748b" tickFormatter={formatThousands} tick={{ fontSize: 11 }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} />
+                    <XAxis 
+                      dataKey="hour_utc" 
+                      stroke={CHART_THEME.axisStroke} 
+                      tick={{ fontSize: CHART_THEME.tickFontSize, fill: CHART_THEME.tickText }} 
+                      tickFormatter={(h) => `${h}:00`} 
+                    />
+                    <YAxis 
+                      stroke={CHART_THEME.axisStroke} 
+                      tickFormatter={formatThousands} 
+                      tick={{ fontSize: CHART_THEME.tickFontSize, fill: CHART_THEME.tickText }} 
+                    />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                      formatter={(value) => [value.toLocaleString(), 'Hot Spots']}
+                      content={
+                        <GlassTooltip 
+                          formatter={(value) => [value.toLocaleString(), 'Hot Spots']} 
+                          labelFormatter={(h) => `Hour: ${h}:00 UTC`} 
+                        />
+                      }
                       labelFormatter={(h) => `Hour: ${h}:00 UTC`}
                     />
                     <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '12px' }} />
-                    <Area type="monotone" dataKey="viirs_count" name="VIIRS (375m)" stroke="#f97316" fillOpacity={1} fill="url(#colorViirs)" />
-                    <Area type="monotone" dataKey="modis_count" name="MODIS (1km)" stroke="#3b82f6" fillOpacity={1} fill="url(#colorModis)" />
+                    <Area type="monotone" dataKey="viirs_count" name="VIIRS (375m)" stroke={SENSOR_COLORS.viirs} fillOpacity={1} fill="url(#activityDiurnalViirs)" />
+                    <Area type="monotone" dataKey="modis_count" name="MODIS (1km)" stroke={SENSOR_COLORS.modis} fillOpacity={1} fill="url(#activityDiurnalModis)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <div className="p-2.5 mt-2 rounded bg-space-950 border border-space-800 text-[11px] text-space-400">
+              <div className="p-3 mt-2 rounded-xl bg-space-950/60 border border-white/[0.08] text-[11px] text-space-400">
                 <strong className="text-space-300">Methodological Note:</strong> This global UTC distribution aggregates sun-synchronous orbital tracks across all longitudes. Peaks at 12:00–14:00 UTC correspond to orbital passes over high-density fire zones in Africa and Eurasia, rather than a single site&apos;s diurnal cycle. Local solar time analysis requires longitude-based solar angle transformation.
               </div>
             </Card>
@@ -210,14 +224,14 @@ export default function ActivityView() {
             >
               <div className="space-y-4 pt-2">
                 {/* MODIS Split */}
-                <div className="p-3.5 rounded-xl bg-space-900 border border-space-800">
+                <div className="p-3.5 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-modis">MODIS Passes</span>
                     <span className="text-[11px] font-mono text-space-400">
                       {((dayNight.modis?.day_count || 0) + (dayNight.modis?.night_count || 0)).toLocaleString()} total
                     </span>
                   </div>
-                  <div className="h-3 w-full bg-space-950 rounded-full overflow-hidden flex">
+                  <div className="h-3 w-full bg-space-950/80 rounded-full overflow-hidden flex border border-white/10 clay-inset">
                     <div 
                       className="bg-amber-500 h-full" 
                       style={{ width: `${dayNight.modis?.day_percentage || 70}%` }} 
@@ -240,14 +254,14 @@ export default function ActivityView() {
                 </div>
 
                 {/* VIIRS Split */}
-                <div className="p-3.5 rounded-xl bg-space-900 border border-space-800">
+                <div className="p-3.5 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-viirs">VIIRS Passes</span>
                     <span className="text-[11px] font-mono text-space-400">
                       {((dayNight.viirs?.day_count || 0) + (dayNight.viirs?.night_count || 0)).toLocaleString()} total
                     </span>
                   </div>
-                  <div className="h-3 w-full bg-space-950 rounded-full overflow-hidden flex">
+                  <div className="h-3 w-full bg-space-950/80 rounded-full overflow-hidden flex border border-white/10 clay-inset">
                     <div 
                       className="bg-amber-500 h-full" 
                       style={{ width: `${dayNight.viirs?.day_percentage || 70}%` }} 
@@ -269,7 +283,7 @@ export default function ActivityView() {
                   </div>
                 </div>
 
-                <div className="p-3 rounded-lg bg-space-950 border border-space-800 text-[11px] text-space-400 leading-relaxed">
+                <div className="p-3 rounded-xl bg-space-950/60 border border-white/[0.08] text-[11px] text-space-400 leading-relaxed">
                   Nighttime passes benefit from cold surface backgrounds, allowing sensors to detect smaller smoldering fires without solar reflectance noise.
                 </div>
               </div>

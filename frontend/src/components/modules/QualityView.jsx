@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import Card from '../common/Card';
 import StatusBadge from '../common/StatusBadge';
+import ClayButton from '../common/ClayButton';
 import { triggerDataIngest, getDataStatus, getDataQualityReport } from '../../api/client';
 
 export default function QualityView({ backendStatus }) {
@@ -64,7 +65,7 @@ export default function QualityView({ backendStatus }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-space-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
         <div>
           <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
@@ -76,30 +77,32 @@ export default function QualityView({ backendStatus }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <ClayButton
+            variant="secondary"
+            size="sm"
             onClick={fetchStatusAndReport}
             disabled={loading}
-            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-space-800 hover:bg-space-700 text-space-300 border border-space-700 text-xs font-medium transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
-          </button>
+          </ClayButton>
 
-          <button
+          <ClayButton
+            variant="primary"
+            size="sm"
             onClick={handleRunIngest}
             disabled={ingesting || !backendStatus.online}
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-950/40 transition-all disabled:opacity-50"
           >
-            <Play className={`w-3.5 h-3.5 ${ingesting ? 'animate-spin' : ''}`} />
+            <Play className={`w-3.5 h-3.5 mr-1.5 ${ingesting ? 'animate-spin' : ''}`} />
             <span>{ingesting ? 'Processing...' : 'Run Ingestion Pipeline'}</span>
-          </button>
+          </ClayButton>
         </div>
       </div>
 
       {/* Action Notification */}
       {actionMessage && (
         <div
-          className={`p-3.5 rounded-xl border text-xs flex items-center space-x-2.5 transition-all ${
+          className={`p-3.5 rounded-xl border text-xs flex items-center space-x-2.5 transition-all shadow-clay-sm ${
             actionMessage.type === 'success'
               ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-200'
               : 'bg-rose-950/30 border-rose-500/40 text-rose-200'
@@ -136,8 +139,8 @@ export default function QualityView({ backendStatus }) {
                 {dataStatus?.viirs_raw_files ?? 0} files
               </span>
             </div>
-            <p className="text-[11px] text-space-500 pt-1">
-              Place new FIRMS CSV files in <code>data/raw/modis/</code> and <code>data/raw/viirs/</code>.
+            <p className="text-[11px] text-space-400 pt-1">
+              Place new FIRMS CSV files in <code className="bg-space-950 px-1 py-0.5 rounded border border-white/10 font-mono text-[10px]">data/raw/modis/</code> and <code className="bg-space-950 px-1 py-0.5 rounded border border-white/10 font-mono text-[10px]">data/raw/viirs/</code>.
             </p>
           </div>
         </Card>
@@ -167,7 +170,7 @@ export default function QualityView({ backendStatus }) {
                 {dataStatus?.has_processed_data ? 'Available' : 'Pending'}
               </span>
             </div>
-            <div className="text-[11px] text-space-500 truncate" title={dataStatus?.message}>
+            <div className="text-[11px] text-space-400 truncate" title={dataStatus?.message}>
               {dataStatus?.message || 'Ready for ingestion'}
             </div>
           </div>
@@ -175,7 +178,7 @@ export default function QualityView({ backendStatus }) {
 
         <Card title="Zero Silent Deletion" subtitle="Scientific provenance">
           <p className="text-xs text-space-300 leading-relaxed">
-            Per development rule #9, invalid or corrupted records are cataloged in <code>data/reports/data_quality_report.json</code> with detailed flags rather than silently removed.
+            Per development rule #9, invalid or corrupted records are cataloged in <code className="bg-space-950 px-1 py-0.5 rounded border border-white/10 font-mono text-[10px]">data/reports/data_quality_report.json</code> with detailed flags rather than silently removed.
           </p>
         </Card>
       </div>
@@ -189,54 +192,54 @@ export default function QualityView({ backendStatus }) {
           <div className="space-y-6">
             {/* Top Metric Counters */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-space-900 border border-space-800">
+              <div className="p-3.5 rounded-xl bg-space-900/80 border border-white/[0.08] shadow-clay-sm">
                 <span className="text-xs text-space-400 block">Total Ingested</span>
                 <span className="text-2xl font-bold font-mono text-white mt-1 block">
                   {qualityReport.total_records.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-space-500">Across {qualityReport.number_of_source_files} files</span>
+                <span className="text-[10px] text-space-400">Across {qualityReport.number_of_source_files} files</span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-space-900 border border-emerald-500/30">
+              <div className="p-3.5 rounded-xl bg-space-900/80 border border-emerald-500/35 shadow-clay-sm">
                 <span className="text-xs text-emerald-400 block">Valid Records</span>
                 <span className="text-2xl font-bold font-mono text-emerald-300 mt-1 block">
                   {qualityReport.valid_records.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-emerald-500">
+                <span className="text-[10px] text-emerald-400 font-mono">
                   {qualityReport.total_records > 0
                     ? `${((qualityReport.valid_records / qualityReport.total_records) * 100).toFixed(1)}% pass rate`
                     : '100%'}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-space-900 border border-rose-500/30">
+              <div className="p-3.5 rounded-xl bg-space-900/80 border border-rose-500/35 shadow-clay-sm">
                 <span className="text-xs text-rose-400 block">Invalid Records</span>
                 <span className="text-2xl font-bold font-mono text-rose-300 mt-1 block">
                   {qualityReport.invalid_records.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-rose-500">Flagged &amp; documented</span>
+                <span className="text-[10px] text-rose-400 font-mono">Flagged &amp; documented</span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-space-900 border border-amber-500/30">
+              <div className="p-3.5 rounded-xl bg-space-900/80 border border-amber-500/35 shadow-clay-sm">
                 <span className="text-xs text-amber-400 block">Flagged Duplicates</span>
                 <span className="text-2xl font-bold font-mono text-amber-300 mt-1 block">
                   {qualityReport.duplicate_counts?.total_flagged_duplicates?.toLocaleString() ?? 0}
                 </span>
-                <span className="text-[10px] text-amber-500">Exact &amp; spatial-temporal</span>
+                <span className="text-[10px] text-amber-400 font-mono">Exact &amp; spatial-temporal</span>
               </div>
             </div>
 
             {/* Sensor Breakdown & Quality Details */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Sensor Breakdown */}
-              <div className="p-4 rounded-xl bg-space-900 border border-space-800 space-y-3">
+              <div className="p-4 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm space-y-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-space-300 flex items-center justify-between">
                   <span>Sensor Ingestion Breakdown</span>
-                  <span className="text-[11px] font-mono text-space-500">MODIS vs VIIRS</span>
+                  <span className="text-[11px] font-mono text-space-400">MODIS vs VIIRS</span>
                 </h4>
 
                 <div className="space-y-3 text-xs">
-                  <div className="p-3 rounded-lg bg-space-950/60 border border-modis/30 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-space-950/60 border border-modis/30 flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-modis-light flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-modis" />
@@ -256,7 +259,7 @@ export default function QualityView({ backendStatus }) {
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-lg bg-space-950/60 border border-viirs/30 flex items-center justify-between">
+                  <div className="p-3 rounded-xl bg-space-950/60 border border-viirs/30 flex items-center justify-between">
                     <div>
                       <div className="font-semibold text-viirs-light flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-viirs" />
@@ -279,31 +282,31 @@ export default function QualityView({ backendStatus }) {
               </div>
 
               {/* Specific Anomaly Counters */}
-              <div className="p-4 rounded-xl bg-space-900 border border-space-800 space-y-3">
+              <div className="p-4 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm space-y-3">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-space-300">
                   Integrity Audit Details
                 </h4>
 
                 <div className="space-y-2 text-xs font-mono">
-                  <div className="flex justify-between py-1.5 border-b border-space-800">
+                  <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
                     <span className="text-space-400">Coordinate Errors (Out of bounds/NaN):</span>
                     <span className={qualityReport.invalid_coordinate_count > 0 ? "text-rose-400 font-bold" : "text-space-300"}>
                       {qualityReport.invalid_coordinate_count}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-space-800">
+                  <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
                     <span className="text-space-400">Timestamp Parse Errors:</span>
                     <span className={qualityReport.timestamp_errors > 0 ? "text-rose-400 font-bold" : "text-space-300"}>
                       {qualityReport.timestamp_errors}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-space-800">
+                  <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
                     <span className="text-space-400">Exact Duplicate Records:</span>
                     <span className="text-space-300">
                       {qualityReport.duplicate_counts?.exact_duplicates ?? 0}
                     </span>
                   </div>
-                  <div className="flex justify-between py-1.5 border-b border-space-800">
+                  <div className="flex justify-between py-1.5 border-b border-white/[0.06]">
                     <span className="text-space-400">Spatial-Temporal Duplicate Clusters:</span>
                     <span className="text-space-300">
                       {qualityReport.duplicate_counts?.spatial_temporal_duplicates ?? 0}
@@ -320,18 +323,18 @@ export default function QualityView({ backendStatus }) {
             </div>
 
             {/* Processed Files Generated */}
-            <div className="p-3.5 rounded-lg bg-space-950/80 border border-space-800 text-xs">
+            <div className="p-3.5 rounded-xl bg-space-950/60 border border-white/[0.08] text-xs">
               <span className="text-space-400 block mb-2 font-semibold">Processed Output Files Generated:</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-[11px]">
-                <div className="p-2 rounded bg-space-900 border border-space-800 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-space-900/60 border border-white/[0.06] flex items-center justify-between">
                   <span className="text-modis-light">modis_normalized.csv</span>
                   <StatusBadge type="healthy" label="Saved" size="xs" />
                 </div>
-                <div className="p-2 rounded bg-space-900 border border-space-800 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-space-900/60 border border-white/[0.06] flex items-center justify-between">
                   <span className="text-viirs-light">viirs_normalized.csv</span>
                   <StatusBadge type="healthy" label="Saved" size="xs" />
                 </div>
-                <div className="p-2 rounded bg-space-900 border border-space-800 flex items-center justify-between">
+                <div className="p-2.5 rounded-xl bg-space-900/60 border border-white/[0.06] flex items-center justify-between">
                   <span className="text-white">unified_observations.csv</span>
                   <StatusBadge type="healthy" label="Saved" size="xs" />
                 </div>

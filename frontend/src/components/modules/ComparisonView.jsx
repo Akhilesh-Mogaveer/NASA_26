@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   GitCompare, 
-  Sliders, 
-  CheckCircle2, 
   AlertCircle, 
-  Zap, 
-  Maximize2, 
-  Flame, 
-  Layers,
   Info
 } from 'lucide-react';
 import {
@@ -22,6 +16,10 @@ import {
 } from 'recharts';
 import Card from '../common/Card';
 import StatusBadge from '../common/StatusBadge';
+import DataTable from '../common/DataTable';
+import GlassTooltip from '../common/GlassTooltip';
+import LoadingState from '../common/LoadingState';
+import { SENSOR_COLORS, CHART_THEME } from '../../theme/tokens';
 import { getSensorComparison, getFRPAnalytics } from '../../api/client';
 
 export default function ComparisonView() {
@@ -57,7 +55,7 @@ export default function ComparisonView() {
   return (
     <div className="space-y-6">
       {/* View Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-space-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
         <div>
           <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             <GitCompare className="w-5 h-5 text-accent-blue" />
@@ -76,11 +74,9 @@ export default function ComparisonView() {
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-xs text-space-400 animate-pulse">
-          Loading multi-sensor comparative metrics...
-        </div>
+        <LoadingState message="Loading multi-sensor comparative metrics..." />
       ) : error ? (
-        <div className="p-6 rounded-xl bg-rose-950/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
+        <div className="p-6 rounded-2xl bg-rose-950/20 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
           <AlertCircle className="w-5 h-5 text-rose-400 flex-shrink-0" />
           <span>Error loading sensor comparison: {error}</span>
         </div>
@@ -91,76 +87,71 @@ export default function ComparisonView() {
             title="Core Instrument & Metric Comparison" 
             subtitle="Quantitative assessment based on 22,175,341 observations from the 2025 calendar year"
           >
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-space-900 border-b border-space-800 text-space-400 font-semibold uppercase tracking-wider text-[11px]">
-                  <tr>
-                    <th className="py-3 px-4">Evaluation Metric</th>
-                    <th className="py-3 px-4 text-modis">MODIS C6.1 (Terra / Aqua)</th>
-                    <th className="py-3 px-4 text-viirs">VIIRS C2 (NOAA-20)</th>
-                    <th className="py-3 px-4 text-space-200">Comparison &amp; Physical Driver</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-space-800/60 font-mono">
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Observation Count</td>
-                    <td className="py-2.5 px-4 font-bold text-modis">{obs.modis_count?.toLocaleString()}</td>
-                    <td className="py-2.5 px-4 font-bold text-viirs">{obs.viirs_count?.toLocaleString()}</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      VIIRS reports <strong className="text-white font-mono">{obs.viirs_to_modis_ratio}x</strong> more hotspot observations
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Nadir Spatial Resolution</td>
-                    <td className="py-2.5 px-4 text-space-200">1,000 m (1.0 km²)</td>
-                    <td className="py-2.5 px-4 text-space-200">375 m (0.14 km²)</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      MODIS pixel area is <strong className="text-white font-mono">7.11x</strong> larger at nadir
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Mean Fire Radiative Power</td>
-                    <td className="py-2.5 px-4 font-bold text-modis">{frpComp.modis_mean_mw} MW</td>
-                    <td className="py-2.5 px-4 font-bold text-viirs">{frpComp.viirs_mean_mw} MW</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      MODIS mean is <strong className="text-white font-mono">{frpComp.ratio_mean_frp}x</strong> higher (thermal dilution)
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Median Fire Radiative Power</td>
-                    <td className="py-2.5 px-4 text-space-200">{frpComp.modis_median_mw} MW</td>
-                    <td className="py-2.5 px-4 text-space-200">{frpComp.viirs_median_mw} MW</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      VIIRS resolves small, smoldering sub-pixel fires
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Sum of Reported FRP (2025)</td>
-                    <td className="py-2.5 px-4 text-space-200">{(frpComp.modis_total_mw / 1e6).toFixed(1)}M MW</td>
-                    <td className="py-2.5 px-4 text-space-200">{(frpComp.viirs_total_mw / 1e6).toFixed(1)}M MW</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      Snapshot power sum (MW); does <strong className="text-amber-400">not</strong> represent total radiated energy (FRE in MJ)
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Scan Edge Footprint Growth</td>
-                    <td className="py-2.5 px-4 text-rose-300">~10x (~9.6 km²)</td>
-                    <td className="py-2.5 px-4 text-emerald-300">~4x (~0.64 km²)</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      VIIRS onboard pixel aggregation limits bow-tie distortion
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-space-900/40">
-                    <td className="py-2.5 px-4 font-sans font-medium text-space-300">Confidence Scale Format</td>
-                    <td className="py-2.5 px-4 text-space-300">0% – 100% (Numeric)</td>
-                    <td className="py-2.5 px-4 text-space-300">low, nominal, high (Categorical)</td>
-                    <td className="py-2.5 px-4 font-sans text-space-300">
-                      Requires categorical harmonization mapping
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              headers={[
+                { label: 'Evaluation Metric' },
+                { label: 'MODIS C6.1 (Terra / Aqua)', className: 'text-modis' },
+                { label: 'VIIRS C2 (NOAA-20)', className: 'text-viirs' },
+                { label: 'Comparison & Physical Driver', className: 'text-space-200' },
+              ]}
+            >
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Observation Count</td>
+                <td className="py-2.5 px-4 font-bold text-modis font-mono">{obs.modis_count?.toLocaleString()}</td>
+                <td className="py-2.5 px-4 font-bold text-viirs font-mono">{obs.viirs_count?.toLocaleString()}</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  VIIRS reports <strong className="text-white font-mono">{obs.viirs_to_modis_ratio}x</strong> more hotspot observations
+                </td>
+              </tr>
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Nadir Spatial Resolution</td>
+                <td className="py-2.5 px-4 text-space-200 font-mono">1,000 m (1.0 km²)</td>
+                <td className="py-2.5 px-4 text-space-200 font-mono">375 m (0.14 km²)</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  MODIS pixel area is <strong className="text-white font-mono">7.11x</strong> larger at nadir
+                </td>
+              </tr>
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Mean Fire Radiative Power</td>
+                <td className="py-2.5 px-4 font-bold text-modis font-mono">{frpComp.modis_mean_mw} MW</td>
+                <td className="py-2.5 px-4 font-bold text-viirs font-mono">{frpComp.viirs_mean_mw} MW</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  MODIS mean is <strong className="text-white font-mono">{frpComp.ratio_mean_frp}x</strong> higher (thermal dilution)
+                </td>
+              </tr>
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Median Fire Radiative Power</td>
+                <td className="py-2.5 px-4 text-space-200 font-mono">{frpComp.modis_median_mw} MW</td>
+                <td className="py-2.5 px-4 text-space-200 font-mono">{frpComp.viirs_median_mw} MW</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  VIIRS resolves small, smoldering sub-pixel fires
+                </td>
+              </tr>
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Sum of Reported FRP (2025)</td>
+                <td className="py-2.5 px-4 text-space-200 font-mono">{(frpComp.modis_total_mw / 1e6).toFixed(1)}M MW</td>
+                <td className="py-2.5 px-4 text-space-200 font-mono">{(frpComp.viirs_total_mw / 1e6).toFixed(1)}M MW</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  Snapshot power sum (MW); does <strong className="text-amber-400">not</strong> represent total radiated energy (FRE in MJ)
+                </td>
+              </tr>
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Scan Edge Footprint Growth</td>
+                <td className="py-2.5 px-4 text-rose-300 font-mono">~10x (~9.6 km²)</td>
+                <td className="py-2.5 px-4 text-emerald-300 font-mono">~4x (~0.64 km²)</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  VIIRS onboard pixel aggregation limits bow-tie distortion
+                </td>
+              </tr>
+              <tr className="hover:bg-space-900/40">
+                <td className="py-2.5 px-4 font-sans font-medium text-space-300">Confidence Scale Format</td>
+                <td className="py-2.5 px-4 text-space-300 font-mono">0% – 100% (Numeric)</td>
+                <td className="py-2.5 px-4 text-space-300 font-mono">low, nominal, high (Categorical)</td>
+                <td className="py-2.5 px-4 font-sans text-space-300">
+                  Requires categorical harmonization mapping
+                </td>
+              </tr>
+            </DataTable>
           </Card>
 
           {/* FRP Distribution Histogram */}
@@ -171,23 +162,31 @@ export default function ComparisonView() {
             <div className="h-80 w-full pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={histogram} margin={{ top: 10, right: 30, left: 10, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="bin_label" stroke="#64748b" tick={{ fontSize: 11 }} label={{ value: 'FRP Range (Megawatts)', position: 'insideBottom', offset: -10, fill: '#94a3b8', fontSize: 11 }} />
-                  <YAxis stroke="#64748b" tickFormatter={formatThousands} tick={{ fontSize: 11 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.gridStroke} />
+                  <XAxis 
+                    dataKey="bin_label" 
+                    stroke={CHART_THEME.axisStroke} 
+                    tick={{ fontSize: CHART_THEME.tickFontSize, fill: CHART_THEME.tickText }} 
+                    label={{ value: 'FRP Range (Megawatts)', position: 'insideBottom', offset: -10, fill: CHART_THEME.tickText, fontSize: 11 }} 
+                  />
+                  <YAxis 
+                    stroke={CHART_THEME.axisStroke} 
+                    tickFormatter={formatThousands} 
+                    tick={{ fontSize: CHART_THEME.tickFontSize, fill: CHART_THEME.tickText }} 
+                  />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
-                    formatter={(value) => [value.toLocaleString(), 'Active-Fire Observations']}
+                    content={<GlassTooltip formatter={(value) => [value.toLocaleString(), 'Active-Fire Observations']} />}
                   />
                   <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} />
-                  <Bar dataKey="modis_count" name="MODIS C6.1" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="viirs_count" name="VIIRS C2" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="modis_count" name="MODIS C6.1" fill={SENSOR_COLORS.modis} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="viirs_count" name="VIIRS C2" fill={SENSOR_COLORS.viirs} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <div className="p-3 mt-2 rounded-lg bg-space-900 border border-space-800 text-xs text-space-300 flex items-start gap-2.5">
+            <div className="p-3 mt-2 rounded-xl bg-space-900/60 border border-white/[0.08] text-xs text-space-300 flex items-start gap-2.5 shadow-clay-sm">
               <Info className="w-4 h-4 text-accent-blue mt-0.5 flex-shrink-0" />
               <p>
-                <strong>Scientific Insight:</strong> In the <code>0–5 MW</code> bin alone, VIIRS detected <strong>9,148,369</strong> active-fire observations compared to only <strong>84,755</strong> for MODIS. Because a 1km² MODIS footprint requires substantial sub-pixel thermal radiation to trigger detection, small low-power fires remain below detection threshold for MODIS but are readily detected as hotspot observations by VIIRS.
+                <strong>Scientific Insight:</strong> In the <code className="bg-space-950 px-1 py-0.5 rounded border border-white/10 font-mono text-[10px]">0–5 MW</code> bin alone, VIIRS detected <strong>9,148,369</strong> active-fire observations compared to only <strong>84,755</strong> for MODIS. Because a 1km² MODIS footprint requires substantial sub-pixel thermal radiation to trigger detection, small low-power fires remain below detection threshold for MODIS but are readily detected as hotspot observations by VIIRS.
               </p>
             </div>
           </Card>
@@ -203,19 +202,19 @@ export default function ComparisonView() {
                     <span className="font-mono text-[10px] text-amber-400 font-sans">Analyst-Defined Bins</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 font-mono text-xs text-center">
-                    <div className="p-2.5 rounded bg-space-900 border border-space-800">
+                    <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                       <span className="text-space-400 block text-[10px] uppercase font-sans">Low (&lt;30%)</span>
                       <span className="font-bold text-space-200">
                         {confDist.modis?.category_percentages?.low || 4.96}%
                       </span>
                     </div>
-                    <div className="p-2.5 rounded bg-space-900 border border-space-800">
+                    <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                       <span className="text-accent-blue block text-[10px] uppercase font-sans">Nominal (30-79%)</span>
                       <span className="font-bold text-space-200">
                         {confDist.modis?.category_percentages?.nominal || 67.80}%
                       </span>
                     </div>
-                    <div className="p-2.5 rounded bg-space-900 border border-space-800">
+                    <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                       <span className="text-emerald-400 block text-[10px] uppercase font-sans">High (&ge;80%)</span>
                       <span className="font-bold text-space-200">
                         {confDist.modis?.category_percentages?.high || 27.24}%
@@ -230,19 +229,19 @@ export default function ComparisonView() {
                     <span className="font-mono text-[10px] text-emerald-400 font-sans">Categorical Output</span>
                   </div>
                   <div className="grid grid-cols-3 gap-2 font-mono text-xs text-center">
-                    <div className="p-2.5 rounded bg-space-900 border border-space-800">
+                    <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                       <span className="text-space-400 block text-[10px] uppercase font-sans">Low (&apos;l&apos;)</span>
                       <span className="font-bold text-space-200">
                         {confDist.viirs?.category_percentages?.low || 12.02}%
                       </span>
                     </div>
-                    <div className="p-2.5 rounded bg-space-900 border border-space-800">
+                    <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                       <span className="text-accent-blue block text-[10px] uppercase font-sans">Nominal (&apos;n&apos;)</span>
                       <span className="font-bold text-space-200">
                         {confDist.viirs?.category_percentages?.nominal || 82.96}%
                       </span>
                     </div>
-                    <div className="p-2.5 rounded bg-space-900 border border-space-800">
+                    <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                       <span className="text-emerald-400 block text-[10px] uppercase font-sans">High (&apos;h&apos;)</span>
                       <span className="font-bold text-space-200">
                         {confDist.viirs?.category_percentages?.high || 5.02}%
@@ -251,7 +250,7 @@ export default function ComparisonView() {
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded bg-space-950 border border-space-800 text-[11px] text-space-400 leading-relaxed">
+                <div className="p-3 rounded-xl bg-space-950/60 border border-white/[0.08] text-[11px] text-space-400 leading-relaxed">
                   <strong className="text-space-200">Methodological Note:</strong> MODIS numeric confidence (0–100%) and VIIRS categorical flags are separate algorithmic conventions. They cannot be equated as direct physical equivalents.
                 </div>
               </div>
@@ -260,21 +259,21 @@ export default function ComparisonView() {
             {/* Candidate Starting Hypotheses for Phase 4 Harmonization */}
             <Card title="Candidate Starting Hypotheses for Phase 4" subtitle="Parameters to be systematically tested and evaluated">
               <div className="space-y-3 text-xs leading-relaxed text-space-300">
-                <div className="p-2.5 rounded-lg bg-space-900/80 border border-space-800">
+                <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                   <span className="font-semibold text-white block mb-0.5">1. Candidate Spatial Search Radius (1.25 – 3.5 km)</span>
                   <span className="text-space-400 text-[11px]">
                     Hypothesis based on footprint geometry. Phase 4 will systematically evaluate alternative thresholds against false matches and spatial commission errors.
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-space-900/80 border border-space-800">
+                <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                   <span className="font-semibold text-white block mb-0.5">2. Candidate Many-to-One (N:1) Association</span>
                   <span className="text-space-400 text-[11px]">
                     Because VIIRS pixels are 7x smaller, multiple VIIRS hot spots may overlap a single MODIS footprint. Phase 4 will evaluate cluster aggregation vs. nearest-neighbor matching.
                   </span>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-space-900/80 border border-space-800">
+                <div className="p-3 rounded-xl bg-space-900/60 border border-white/[0.08] shadow-clay-sm">
                   <span className="font-semibold text-white block mb-0.5">3. Candidate Temporal Window Gating (&Delta;t &le; 90 min)</span>
                   <span className="text-space-400 text-[11px]">
                     Candidate window to evaluate true near-simultaneous observations (Aqua vs NOAA-20) while accounting for orbital drift and fire diurnal progression.

@@ -6,7 +6,7 @@ import StatusBadge from '../common/StatusBadge';
 export default function AnomalyView() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-space-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.08]">
         <div>
           <h2 className="text-xl font-bold text-white tracking-tight flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-amber-400" />
@@ -20,7 +20,7 @@ export default function AnomalyView() {
         <StatusBadge type="warning" label="Statistical Observation &bull; Not Fire Prediction" />
       </div>
 
-      <div className="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 flex items-start space-x-3 text-xs text-amber-200">
+      <div className="p-4 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex items-start space-x-3 text-xs text-amber-200 backdrop-blur-sm shadow-clay-sm relative overflow-hidden">
         <ShieldAlert className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
         <div className="leading-relaxed">
           <strong className="text-white block mb-0.5">Scientific Principle (Prompt Rule #17 &amp; Docs Section 12):</strong>
@@ -31,7 +31,7 @@ export default function AnomalyView() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title="Detection Methodology" subtitle="Parametric & non-parametric tests">
           <div className="space-y-3 text-xs text-space-300">
-            <div className="p-2.5 rounded bg-space-900 border border-space-800 font-mono text-[11px]">
+            <div className="p-3 rounded-xl bg-space-950/60 border border-white/10 font-mono text-[11px] clay-inset text-amber-300">
               Z-score: Z = (X - &mu;) / &sigma;
             </div>
             <p className="text-space-400 text-[11px] leading-relaxed">

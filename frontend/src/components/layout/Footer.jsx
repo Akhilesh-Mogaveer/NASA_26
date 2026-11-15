@@ -3,9 +3,9 @@ import { Satellite, ShieldCheck, Database, ExternalLink } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-space-800 bg-space-900/60 py-8 text-xs text-space-400">
+    <footer className="mt-16 border-t border-white/[0.08] bg-space-950/70 backdrop-blur-md py-8 text-xs text-space-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-space-800/80">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-6 border-b border-white/[0.06]">
           <div>
             <div className="flex items-center space-x-2 text-space-200 font-semibold mb-2">
               <Satellite className="w-4 h-4 text-modis" />

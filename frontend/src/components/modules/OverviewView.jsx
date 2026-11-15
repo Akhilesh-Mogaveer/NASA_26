@@ -4,21 +4,18 @@ import {
   Activity, 
   Layers, 
   Server, 
-  ShieldCheck, 
   FolderCheck, 
   AlertCircle, 
   CheckCircle2, 
   ArrowRight,
   Flame,
   Radio,
-  Clock,
-  Compass,
-  FileCode2,
-  TrendingUp,
-  BarChart3
+  FileCode2
 } from 'lucide-react';
 import Card from '../common/Card';
+import StatCard from '../common/StatCard';
 import StatusBadge from '../common/StatusBadge';
+import ClayButton from '../common/ClayButton';
 import { getAnalyticsOverview } from '../../api/client';
 
 export default function OverviewView({ backendStatus, checkingBackend, onRefreshHealth, setActiveTab }) {
@@ -48,9 +45,9 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
   return (
     <div className="space-y-6">
       {/* Platform Banner */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-space-900 via-space-850 to-space-900 border border-space-700/80 p-6 sm:p-8">
-        <div className="absolute top-0 right-0 -mt-6 -mr-6 w-56 h-56 bg-modis/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 -mb-8 w-48 h-48 bg-viirs/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl glass-panel border border-white/10 p-6 sm:p-8 shadow-glass">
+        <div className="absolute top-0 right-0 -mt-6 -mr-6 w-56 h-56 bg-modis/10 rounded-full blur-3xl pointer-events-none transform-gpu" />
+        <div className="absolute bottom-0 right-1/4 -mb-8 w-48 h-48 bg-viirs/10 rounded-full blur-2xl pointer-events-none transform-gpu" />
 
         <div className="relative z-10 max-w-3xl">
           <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -71,93 +68,74 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
           </p>
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
+            <ClayButton
+              variant="accent"
               onClick={() => setActiveTab('matching')}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-accent-blue hover:bg-sky-500 text-white text-xs font-semibold shadow-md shadow-accent-blue/25 transition-all"
             >
               <span>Spatial-Temporal Matching</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </ClayButton>
+            <ClayButton
+              variant="modis"
               onClick={() => setActiveTab('map')}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-modis hover:bg-modis-dark text-white text-xs font-semibold shadow-md shadow-modis/25 transition-all"
             >
               <span>Explore Fire Map</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-            <button
+              <ArrowRight className="w-4 h-4 ml-1.5" />
+            </ClayButton>
+            <ClayButton
+              variant="secondary"
               onClick={() => setActiveTab('activity')}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-space-800 hover:bg-space-700 text-space-200 border border-space-600 text-xs font-medium transition-all"
             >
               <span>Temporal Activity</span>
-            </button>
-            <button
+            </ClayButton>
+            <ClayButton
+              variant="secondary"
               onClick={() => setActiveTab('comparison')}
-              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-space-800 hover:bg-space-700 text-space-200 border border-space-600 text-xs font-medium transition-all"
             >
               <span>Sensor Harmonization</span>
-            </button>
+            </ClayButton>
           </div>
         </div>
       </div>
 
       {/* Primary Key Metrics Banner */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-space-900/80 border border-space-750 shadow-sm">
-          <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-            <span>Hotspot Observations</span>
-            <Flame className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
-            {totalObs.toLocaleString()}
-          </div>
-          <div className="text-[11px] text-space-400 mt-1 flex items-center justify-between">
-            <span>Year: 2025</span>
-            <span className="text-emerald-400 font-medium">&gt;99.999% Valid</span>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          label="Hotspot Observations"
+          value={totalObs.toLocaleString()}
+          subtitle="Year: 2025"
+          trend=">99.999% Valid"
+          icon={Flame}
+          accentColor="blue"
+        />
 
-        <div className="p-4 rounded-xl bg-space-900/80 border border-modis/30 shadow-sm">
-          <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-            <span className="text-modis font-medium">MODIS C6.1</span>
-            <Satellite className="w-4 h-4 text-modis" />
-          </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-modis font-mono">
-            {modisCount.toLocaleString()}
-          </div>
-          <div className="text-[11px] text-space-400 mt-1 flex items-center justify-between">
-            <span>1km nadir</span>
-            <span className="font-mono">{((modisCount / totalObs) * 100).toFixed(1)}% share</span>
-          </div>
-        </div>
+        <StatCard
+          label="MODIS C6.1"
+          value={modisCount.toLocaleString()}
+          subtitle="1km nadir"
+          trend={`${((modisCount / totalObs) * 100).toFixed(1)}% share`}
+          icon={Satellite}
+          accentColor="modis"
+        />
 
-        <div className="p-4 rounded-xl bg-space-900/80 border border-viirs/30 shadow-sm">
-          <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-            <span className="text-viirs font-medium">VIIRS C2 (NOAA-20)</span>
-            <Radio className="w-4 h-4 text-viirs" />
-          </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-viirs font-mono">
-            {viirsCount.toLocaleString()}
-          </div>
-          <div className="text-[11px] text-space-400 mt-1 flex items-center justify-between">
-            <span>375m nadir</span>
-            <span className="font-mono text-viirs-light font-bold">{ratio.toFixed(2)}x vs MODIS</span>
-          </div>
-        </div>
+        <StatCard
+          label="VIIRS C2 (NOAA-20)"
+          value={viirsCount.toLocaleString()}
+          subtitle="375m nadir"
+          trend={`${ratio.toFixed(2)}x vs MODIS`}
+          icon={Radio}
+          accentColor="viirs"
+        />
 
-        <div className="p-4 rounded-xl bg-space-900/80 border border-space-750 shadow-sm">
-          <div className="flex items-center justify-between text-space-400 text-xs mb-1">
-            <span>Sum of Reported FRP</span>
-            <Activity className="w-4 h-4 text-accent-blue" />
-          </div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white font-mono">
-            {(totalFRP / 1e6).toFixed(1)}M <span className="text-xs font-normal text-space-400">MW</span>
-          </div>
-          <div className="text-[11px] text-space-400 mt-1 flex items-center justify-between">
-            <span>Snapshot Sum (MW)</span>
-            <span className="font-mono text-space-200">Mean: {meanFRP.toFixed(2)} MW</span>
-          </div>
-        </div>
+        <StatCard
+          label="Sum of Reported FRP"
+          value={`${(totalFRP / 1e6).toFixed(1)}M`}
+          unit="MW"
+          subtitle="Snapshot Sum (MW)"
+          trend={`Mean: ${meanFRP.toFixed(2)} MW`}
+          icon={Activity}
+          accentColor="blue"
+        />
       </div>
 
       {/* Grid: Live Backend Telemetry & Sensor Specs */}
@@ -167,70 +145,68 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
           title="Backend API Telemetry"
           subtitle="FastAPI verification probe"
           action={
-            <button
+            <ClayButton
+              variant="secondary"
+              size="sm"
               onClick={onRefreshHealth}
               disabled={checkingBackend}
-              className="text-xs text-space-400 hover:text-white px-2 py-1 rounded bg-space-800 border border-space-700 hover:border-space-600 transition-colors disabled:opacity-50"
             >
               {checkingBackend ? 'Testing...' : 'Test Connection'}
-            </button>
+            </ClayButton>
           }
           className="lg:col-span-1"
         >
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-space-900 border border-space-800">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-space-900/80 border border-white/[0.08]">
               <div className="flex items-center space-x-2.5">
                 <Server className="w-4 h-4 text-accent-blue" />
-                <span className="text-xs font-medium text-space-300">FastAPI Service</span>
+                <span className="text-xs font-semibold text-space-200">FastAPI Service</span>
               </div>
               <StatusBadge
                 type={backendStatus.online ? 'healthy' : 'error'}
-                label={backendStatus.online ? 'Healthy' : 'Disconnected'}
+                label={backendStatus.online ? 'API Online' : 'API Offline'}
               />
             </div>
 
             {backendStatus.online ? (
               <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between py-1 border-b border-space-800">
+                <div className="flex justify-between py-1.5 border-b border-white/[0.05]">
                   <span className="text-space-400">API Endpoint</span>
                   <span className="font-mono text-space-200">GET /api/health</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-space-800">
+                <div className="flex justify-between py-1.5 border-b border-white/[0.05]">
                   <span className="text-space-400">Service Name</span>
                   <span className="font-mono text-space-200">{backendStatus.data?.service || 'FireLens API'}</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-space-800">
+                <div className="flex justify-between py-1.5 border-b border-white/[0.05]">
                   <span className="text-space-400">Analytics Engine</span>
                   <span className="font-mono text-emerald-400 font-semibold">DuckDB High-Performance</span>
                 </div>
-                <div className="flex justify-between py-1 border-b border-space-800">
+                <div className="flex justify-between py-1.5 border-b border-white/[0.05]">
                   <span className="text-space-400">Last Probed</span>
                   <span className="font-mono text-space-300">
                     {backendStatus.lastChecked ? new Date(backendStatus.lastChecked).toLocaleTimeString() : 'N/A'}
                   </span>
                 </div>
-
                 <div className="pt-2">
-                  <span className="text-[11px] font-semibold text-space-300 uppercase tracking-wider block mb-2">
-                    Storage Directories Verified
-                  </span>
+                  <div className="text-[11px] text-space-400 mb-1.5 font-medium">Data Storage Directories:</div>
                   <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
                     {backendStatus.data?.data_directories &&
                       Object.entries(backendStatus.data.data_directories).map(([dir, exists]) => (
-                        <div key={dir} className="flex items-center space-x-1.5 p-1.5 rounded bg-space-900/60 border border-space-800">
+                        <div key={dir} className="flex items-center space-x-1.5 p-1.5 rounded-lg bg-space-900/60 border border-white/[0.06]">
                           {exists ? (
                             <FolderCheck className="w-3.5 h-3.5 text-emerald-400" />
                           ) : (
                             <AlertCircle className="w-3.5 h-3.5 text-rose-400" />
                           )}
-                          <span className="text-space-300 truncate">{dir}</span>
+                          <span className={exists ? 'text-space-300' : 'text-rose-400'}>{dir}/</span>
                         </div>
                       ))}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-lg bg-rose-950/20 border border-rose-500/20 text-xs text-rose-300 space-y-2">
+              <div className="p-4 rounded-xl bg-rose-950/20 border border-rose-500/20 text-xs text-rose-300 space-y-2">
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
                   <span className="font-semibold">Backend Unreachable</span>
@@ -238,7 +214,7 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
                 <p className="text-space-400 text-[11px] leading-relaxed">
                   Start the FastAPI backend with:
                 </p>
-                <code className="block bg-space-950 p-2 rounded text-space-300 font-mono text-[11px]">
+                <code className="block bg-space-950 p-2 rounded-lg text-space-300 font-mono text-[11px] border border-white/[0.05]">
                   cd backend<br />
                   .\venv\Scripts\activate<br />
                   uvicorn app.main:app --reload
@@ -257,7 +233,7 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
           <div className="space-y-3">
             {analytics?.key_findings ? (
               analytics.key_findings.map((finding, idx) => (
-                <div key={idx} className="flex items-start space-x-2.5 p-3 rounded-lg bg-space-900/70 border border-space-800 text-xs">
+                <div key={idx} className="flex items-start space-x-2.5 p-3 rounded-xl bg-space-900/60 border border-white/[0.06] text-xs transition-colors hover:bg-space-900/80">
                   <CheckCircle2 className="w-4 h-4 text-accent-blue flex-shrink-0 mt-0.5" />
                   <p className="text-space-300 leading-relaxed">{finding}</p>
                 </div>
@@ -266,13 +242,13 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
               <div className="text-xs text-space-400 italic p-4">Loading key findings...</div>
             )}
 
-            <div className="mt-4 p-3 rounded-lg bg-space-900/90 border border-space-800 text-xs text-space-400 flex items-center justify-between">
+            <div className="mt-4 p-3 rounded-xl bg-space-900/80 border border-white/[0.08] text-xs text-space-400 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <FileCode2 className="w-4 h-4 text-modis" />
                 <span className="text-space-300 font-medium">Jupyter EDA Notebook Available:</span>
-                <code className="text-space-200 font-mono text-[11px]">notebooks/FireLens_EDA.ipynb</code>
+                <code className="text-space-200 font-mono text-[11px] bg-space-950 px-1.5 py-0.5 rounded border border-white/10">notebooks/FireLens_EDA.ipynb</code>
               </div>
-              <span className="text-[10px] text-space-500">29 Cells Executed</span>
+              <span className="text-[10px] text-space-400 font-mono">29 Cells Executed</span>
             </div>
           </div>
         </Card>
@@ -284,9 +260,9 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
         subtitle="End-to-end data processing workflow for NASA Space Apps 2026"
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-space-900/70 border border-emerald-500/40 relative">
+          <div className="p-4 rounded-xl clay-card border-emerald-500/35 relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
                 PHASE 1 &bull; COMPLETE
               </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -297,9 +273,9 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-space-900/70 border border-emerald-500/40 relative">
+          <div className="p-4 rounded-xl clay-card border-emerald-500/35 relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
                 PHASE 2 &bull; VERIFIED
               </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -310,9 +286,9 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-space-900/70 border border-emerald-500/40 relative">
+          <div className="p-4 rounded-xl clay-card border-emerald-500/35 relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
                 PHASE 3 &bull; COMPLETE
               </span>
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -323,9 +299,9 @@ export default function OverviewView({ backendStatus, checkingBackend, onRefresh
             </p>
           </div>
 
-          <div className="p-4 rounded-xl bg-space-900/70 border border-space-700">
+          <div className="p-4 rounded-xl clay-card border-white/10 relative">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-space-800 text-space-300 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-space-800 text-space-300 font-bold border border-white/10">
                 PHASE 4 &ndash; UPCOMING
               </span>
               <Layers className="w-4 h-4 text-space-500" />
