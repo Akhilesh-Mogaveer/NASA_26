@@ -38,9 +38,15 @@ import {
   Pie, 
   Cell 
 } from 'recharts';
-import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip as MapTooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip as MapTooltip } from 'react-leaflet';
 import Card from '../components/common/Card';
 import StatusBadge from '../components/common/StatusBadge';
+import SubTabs from '../components/common/SubTabs';
+import DataTable from '../components/common/DataTable';
+import GlassTooltip from '../components/common/GlassTooltip';
+import ClayButton from '../components/common/ClayButton';
+import ChangeMapView from '../components/common/ChangeMapView';
+import { SENSOR_COLORS, EVENT_COLORS, CHART_THEME, MAP_THEME } from '../theme/tokens';
 import { 
   getEvolutionSummary,
   getEvolutionTracks,
@@ -54,13 +60,6 @@ import {
   getEvolutionExperiments
 } from '../api/client';
 
-function ChangeMapView({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
 
 export default function EventEvolutionView() {
   const [loading, setLoading] = useState(true);
@@ -281,7 +280,7 @@ export default function EventEvolutionView() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-space-800">
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
@@ -292,62 +291,27 @@ export default function EventEvolutionView() {
               Phase 6 Scientific Engine
             </span>
           </div>
-          <p className="text-gray-400 text-sm mt-1">
+          <p className="text-space-400 text-sm mt-1">
             Tracks candidate temporal continuity, lineage, and branching graph structures across successive satellite overpasses.
           </p>
         </div>
 
         {/* SubTab Navigation */}
-        <div className="flex items-center gap-1 bg-gray-900/80 p-1 rounded-lg border border-gray-800 text-sm">
-          <button
-            onClick={() => setSubTab('overview')}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors ${
-              subTab === 'overview' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setSubTab('map')}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-              subTab === 'map' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Compass className="w-4 h-4" />
-            Interactive Map
-          </button>
-          <button
-            onClick={() => setSubTab('timeline')}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-              subTab === 'timeline' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            Event Timeline
-          </button>
-          <button
-            onClick={() => setSubTab('lineage')}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-              subTab === 'lineage' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <GitMerge className="w-4 h-4" />
-            Lineage & Splits
-          </button>
-          <button
-            onClick={() => setSubTab('runner')}
-            className={`px-3 py-1.5 rounded-md font-medium transition-colors flex items-center gap-1.5 ${
-              subTab === 'runner' ? 'bg-emerald-600 text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Sliders className="w-4 h-4" />
-            Runner & Benchmarks
-          </button>
-        </div>
+        <SubTabs
+          tabs={[
+            { id: 'overview', label: 'Overview' },
+            { id: 'map', label: 'Interactive Map', icon: Compass },
+            { id: 'timeline', label: 'Event Timeline', icon: Clock },
+            { id: 'lineage', label: 'Lineage & Splits', icon: GitMerge },
+            { id: 'runner', label: 'Runner & Benchmarks', icon: Sliders },
+          ]}
+          activeTab={subTab}
+          onChange={setSubTab}
+        />
       </div>
 
       {/* Scientific Principle Banner */}
-      <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-lg p-4 text-xs text-gray-300 flex items-start gap-3">
+      <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-lg p-4 text-xs text-space-300 flex items-start gap-3">
         <Info className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p className="font-semibold text-emerald-300">Scientific Integrity Notice: Candidate Continuity vs. Physical Fires</p>
@@ -366,16 +330,16 @@ export default function EventEvolutionView() {
         <div className="space-y-6">
           {/* Key Metric KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-space-900 border-space-800">
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-xs uppercase font-medium">MODIS Event Tracks</span>
+                <span className="text-space-400 text-xs uppercase font-medium">MODIS Event Tracks</span>
                 <span className="px-2 py-0.5 text-xs bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">MODIS</span>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-white">{summary.modis.total_event_tracks}</span>
-                <span className="text-xs text-gray-400">({summary.modis.multi_cluster_tracks_count} multi-cluster)</span>
+                <span className="text-xs text-space-400">({summary.modis.multi_cluster_tracks_count} multi-cluster)</span>
               </div>
-              <div className="mt-3 text-xs text-gray-400 space-y-1 border-t border-gray-800/60 pt-2">
+              <div className="mt-3 text-xs text-space-400 space-y-1 border-t border-space-800/60 pt-2">
                 <div className="flex justify-between">
                   <span>Median Track Duration:</span>
                   <span className="text-white font-medium">{formatHours(summary.modis.median_observed_track_duration_hours)}</span>
@@ -395,16 +359,16 @@ export default function EventEvolutionView() {
               </div>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-space-900 border-space-800">
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-xs uppercase font-medium">VIIRS Event Tracks</span>
+                <span className="text-space-400 text-xs uppercase font-medium">VIIRS Event Tracks</span>
                 <span className="px-2 py-0.5 text-xs bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded">VIIRS</span>
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-white">{summary.viirs.total_event_tracks}</span>
-                <span className="text-xs text-gray-400">({summary.viirs.multi_cluster_tracks_count} multi-cluster)</span>
+                <span className="text-xs text-space-400">({summary.viirs.multi_cluster_tracks_count} multi-cluster)</span>
               </div>
-              <div className="mt-3 text-xs text-gray-400 space-y-1 border-t border-gray-800/60 pt-2">
+              <div className="mt-3 text-xs text-space-400 space-y-1 border-t border-space-800/60 pt-2">
                 <div className="flex justify-between">
                   <span>Median Track Duration:</span>
                   <span className="text-white font-medium">{formatHours(summary.viirs.median_observed_track_duration_hours)}</span>
@@ -424,16 +388,16 @@ export default function EventEvolutionView() {
               </div>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-space-900 border-space-800">
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-xs uppercase font-medium">Temporal Continuity Edges</span>
+                <span className="text-space-400 text-xs uppercase font-medium">Temporal Continuity Edges</span>
                 <GitBranch className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-3xl font-bold text-white">{summary.benchmarks.total_relationships_generated}</span>
                 <span className="text-xs text-emerald-400 font-medium">Directed Edges</span>
               </div>
-              <div className="mt-3 text-xs text-gray-400 space-y-1 border-t border-gray-800/60 pt-2">
+              <div className="mt-3 text-xs text-space-400 space-y-1 border-t border-space-800/60 pt-2">
                 <div className="flex justify-between">
                   <span>MODIS Continuity Edges:</span>
                   <span className="text-white font-medium">{summary.modis.total_temporal_relationships}</span>
@@ -449,9 +413,9 @@ export default function EventEvolutionView() {
               </div>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800">
+            <Card className="bg-space-900 border-space-800">
               <div className="flex items-center justify-between">
-                <span className="text-gray-400 text-xs uppercase font-medium">Graph Lineage Topologies</span>
+                <span className="text-space-400 text-xs uppercase font-medium">Graph Lineage Topologies</span>
                 <GitMerge className="w-4 h-4 text-purple-400" />
               </div>
               <div className="mt-2 flex items-baseline gap-2">
@@ -460,7 +424,7 @@ export default function EventEvolutionView() {
                 </span>
                 <span className="text-xs text-purple-400 font-medium">Splits / {summary.modis.merges_count + summary.viirs.merges_count} Merges</span>
               </div>
-              <div className="mt-3 text-xs text-gray-400 space-y-1 border-t border-gray-800/60 pt-2">
+              <div className="mt-3 text-xs text-space-400 space-y-1 border-t border-space-800/60 pt-2">
                 <div className="flex justify-between">
                   <span>MODIS Splits / Merges:</span>
                   <span className="text-white font-medium">{summary.modis.splits_count} / {summary.modis.merges_count}</span>
@@ -479,8 +443,8 @@ export default function EventEvolutionView() {
 
           {/* Charts: Track Types & Lineage Classifications */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="bg-gray-900 border-gray-800 p-5">
-              <h3 className="text-sm font-semibold text-gray-200 mb-4 flex items-center gap-2">
+            <Card className="bg-space-900 border-space-800 p-5">
+              <h3 className="text-sm font-semibold text-space-200 mb-4 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-emerald-400" />
                 Track Topology Classification Distribution
               </h3>
@@ -513,23 +477,23 @@ export default function EventEvolutionView() {
                       VIIRS: summary.viirs.track_type_breakdown.branching_merge || 0,
                     },
                   ]}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.5} />
-                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
-                    <YAxis stroke="#9ca3af" fontSize={11} />
-                    <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '0.375rem', fontSize: '12px' }} />
-                    <Legend />
-                    <Bar dataKey="MODIS" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="VIIRS" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.grid.stroke} />
+                    <XAxis dataKey="name" stroke={CHART_THEME.axis.stroke} tick={{ fill: CHART_THEME.tick.fill, fontSize: 11 }} />
+                    <YAxis stroke={CHART_THEME.axis.stroke} tick={{ fill: CHART_THEME.tick.fill, fontSize: 11 }} />
+                    <Tooltip content={<GlassTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                    <Bar dataKey="MODIS" fill={SENSOR_COLORS.modis} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="VIIRS" fill={SENSOR_COLORS.viirs} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-space-400 mt-2">
                 Topology classifications are graph-level structural properties of connected overpass detections.
               </p>
             </Card>
 
-            <Card className="bg-gray-900 border-gray-800 p-5">
-              <h3 className="text-sm font-semibold text-gray-200 mb-4 flex items-center gap-2">
+            <Card className="bg-space-900 border-space-800 p-5">
+              <h3 className="text-sm font-semibold text-space-200 mb-4 flex items-center gap-2">
                 <GitBranch className="w-4 h-4 text-purple-400" />
                 Continuity Relationship Evidence Classifications
               </h3>
@@ -557,17 +521,17 @@ export default function EventEvolutionView() {
                       VIIRS: summary.viirs.classification_breakdown.continuation_candidate || 0,
                     },
                   ]}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.5} />
-                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} />
-                    <YAxis stroke="#9ca3af" fontSize={11} />
-                    <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', borderRadius: '0.375rem', fontSize: '12px' }} />
-                    <Legend />
-                    <Bar dataKey="MODIS" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="VIIRS" fill="#06b6d4" radius={[4, 4, 0, 0]} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.grid.stroke} />
+                    <XAxis dataKey="name" stroke={CHART_THEME.axis.stroke} tick={{ fill: CHART_THEME.tick.fill, fontSize: 11 }} />
+                    <YAxis stroke={CHART_THEME.axis.stroke} tick={{ fill: CHART_THEME.tick.fill, fontSize: 11 }} />
+                    <Tooltip content={<GlassTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                    <Bar dataKey="MODIS" fill={SENSOR_COLORS.modis} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="VIIRS" fill={SENSOR_COLORS.viirs} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-space-400 mt-2">
                 Evaluates in-degree and out-degree connectivity between successive observation clusters.
               </p>
             </Card>
@@ -581,43 +545,43 @@ export default function EventEvolutionView() {
       {subTab === 'map' && (
         <div className="space-y-4">
           {/* Controls Bar */}
-          <div className="bg-gray-900 p-4 rounded-lg border border-gray-800 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="bg-space-900 p-4 rounded-lg border border-space-800 flex flex-wrap items-center justify-between gap-4 text-xs">
             <div className="flex items-center gap-4 flex-wrap">
-              <label className="flex items-center gap-2 cursor-pointer text-gray-300">
+              <label className="flex items-center gap-2 cursor-pointer text-space-300">
                 <input
                   type="checkbox"
                   checked={showModisNodes}
                   onChange={(e) => setShowModisNodes(e.target.checked)}
-                  className="rounded bg-gray-800 border-gray-700 text-amber-500 focus:ring-0"
+                  className="rounded bg-space-800 border-space-700 text-amber-500 focus:ring-0"
                 />
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                 MODIS Clusters
               </label>
 
-              <label className="flex items-center gap-2 cursor-pointer text-gray-300">
+              <label className="flex items-center gap-2 cursor-pointer text-space-300">
                 <input
                   type="checkbox"
                   checked={showViirsNodes}
                   onChange={(e) => setShowViirsNodes(e.target.checked)}
-                  className="rounded bg-gray-800 border-gray-700 text-cyan-500 focus:ring-0"
+                  className="rounded bg-space-800 border-space-700 text-cyan-500 focus:ring-0"
                 />
                 <span className="inline-block w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
                 VIIRS Clusters
               </label>
 
               <div className="flex items-center gap-2 ml-4">
-                <span className="text-gray-400">Filter Single Track:</span>
+                <span className="text-space-400">Filter Single Track:</span>
                 <input
                   type="text"
                   placeholder="e.g. TRACK-VIIRS-00001"
                   value={mapFilterTrackId}
                   onChange={(e) => setMapFilterTrackId(e.target.value)}
-                  className="bg-gray-800 border border-gray-700 text-white px-2 py-1 rounded text-xs w-48"
+                  className="bg-space-800 border border-space-700 text-white px-2 py-1 rounded text-xs w-48"
                 />
                 {mapFilterTrackId && (
                   <button
                     onClick={() => setMapFilterTrackId('')}
-                    className="text-gray-400 hover:text-white"
+                    className="text-space-400 hover:text-white"
                   >
                     Clear
                   </button>
@@ -629,7 +593,7 @@ export default function EventEvolutionView() {
               <button
                 onClick={fetchMapData}
                 disabled={mapLoading}
-                className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded border border-gray-700 flex items-center gap-1.5"
+                className="px-3 py-1 bg-space-800 hover:bg-space-700 text-space-200 rounded border border-space-700 flex items-center gap-1.5"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${mapLoading ? 'animate-spin' : ''}`} />
                 Reload Viewport
@@ -638,11 +602,11 @@ export default function EventEvolutionView() {
           </div>
 
           {/* Map Container */}
-          <Card className="bg-gray-900 border-gray-800 p-0 overflow-hidden relative" style={{ height: '620px' }}>
+          <Card className="bg-space-900 border-space-800 p-0 overflow-hidden relative" style={{ height: '620px' }}>
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
-              style={{ height: '100%', width: '100%', background: '#111827' }}
+              style={{ height: '100%', width: '100%', background: MAP_THEME.backgroundColor }}
             >
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
               <TileLayer
@@ -655,10 +619,10 @@ export default function EventEvolutionView() {
               {mapEdges.map((edge) => {
                 const isModis = edge.sensor === 'MODIS';
                 const strokeColor = edge.classification === 'possible_split' 
-                  ? '#a855f7' // Purple
+                  ? EVENT_COLORS.split
                   : edge.classification === 'possible_merge'
-                  ? '#ec4899' // Pink
-                  : isModis ? '#f59e0b' : '#06b6d4';
+                  ? EVENT_COLORS.merge
+                  : isModis ? SENSOR_COLORS.modis : SENSOR_COLORS.viirs;
 
                 return (
                   <Polyline
@@ -674,10 +638,10 @@ export default function EventEvolutionView() {
                     <MapTooltip sticky>
                       <div className="p-1 text-xs">
                         <p className="font-bold text-white">{edge.relationship_id}</p>
-                        <p className="text-gray-400">Track: {edge.track_id}</p>
-                        <p className="text-gray-300">Gap: {formatHours(edge.temporal_gap_hours)} | Dist: {formatKm(edge.centroid_distance_km)}</p>
+                        <p className="text-space-400">Track: {edge.track_id}</p>
+                        <p className="text-space-300">Gap: {formatHours(edge.temporal_gap_hours)} | Dist: {formatKm(edge.centroid_distance_km)}</p>
                         <p className="text-emerald-400 font-semibold">{edge.classification}</p>
-                        <p className="text-gray-400">Score: {edge.heuristic_score}</p>
+                        <p className="text-space-400">Score: {edge.heuristic_score}</p>
                       </div>
                     </MapTooltip>
                   </Polyline>
@@ -690,7 +654,7 @@ export default function EventEvolutionView() {
                 if (isModis && !showModisNodes) return null;
                 if (!isModis && !showViirsNodes) return null;
 
-                const fillColor = isModis ? '#f59e0b' : '#06b6d4';
+                const fillColor = isModis ? SENSOR_COLORS.modis : SENSOR_COLORS.viirs;
                 const radius = Math.min(10, Math.max(4, Math.log2(node.observation_count + 1) * 2));
 
                 return (
@@ -701,16 +665,16 @@ export default function EventEvolutionView() {
                     pathOptions={{
                       fillColor: fillColor,
                       fillOpacity: 0.85,
-                      color: '#ffffff',
+                      color: 'white',
                       weight: 1,
                     }}
                   >
                     <MapTooltip sticky>
                       <div className="p-1 text-xs space-y-0.5">
                         <p className="font-bold text-white">{node.cluster_id}</p>
-                        <p className="text-gray-400">Track: {node.track_id}</p>
-                        <p className="text-gray-300">Time: {node.timestamp_utc}</p>
-                        <p className="text-gray-300">Obs: {node.observation_count} | FRP: {formatMW(node.sum_frp_mw)}</p>
+                        <p className="text-space-400">Track: {node.track_id}</p>
+                        <p className="text-space-300">Time: {node.timestamp_utc}</p>
+                        <p className="text-space-300">Obs: {node.observation_count} | FRP: {formatMW(node.sum_frp_mw)}</p>
                         <p className="text-emerald-400">Type: {node.track_type}</p>
                       </div>
                     </MapTooltip>
@@ -720,7 +684,7 @@ export default function EventEvolutionView() {
             </MapContainer>
 
             {/* Map Legend Overlay */}
-            <div className="absolute bottom-4 left-4 z-[1000] bg-gray-900/90 backdrop-blur-sm p-3 rounded-md border border-gray-800 text-xs text-gray-300 space-y-1.5 shadow-lg">
+            <div className="absolute bottom-4 left-4 z-[1000] bg-space-900/90 backdrop-blur-sm p-3 rounded-md border border-space-800 text-xs text-space-300 space-y-1.5 shadow-lg">
               <p className="font-semibold text-white mb-1">Temporal Evolution Legend</p>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
@@ -754,7 +718,7 @@ export default function EventEvolutionView() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Tracks List Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            <Card className="bg-gray-900 border-gray-800 p-4">
+            <Card className="bg-space-900 border-space-800 p-4">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                   <Flame className="w-4 h-4 text-emerald-400" />
@@ -768,7 +732,7 @@ export default function EventEvolutionView() {
                   <select
                     value={trackSensorFilter}
                     onChange={(e) => { setTrackSensorFilter(e.target.value); setTrackPage(1); }}
-                    className="bg-gray-800 border border-gray-700 text-white rounded px-2 py-1 text-xs w-1/2"
+                    className="bg-space-800 border border-space-700 text-white rounded px-2 py-1 text-xs w-1/2"
                   >
                     <option value="ALL">All Sensors</option>
                     <option value="MODIS">MODIS</option>
@@ -777,7 +741,7 @@ export default function EventEvolutionView() {
                   <select
                     value={trackTypeFilter}
                     onChange={(e) => { setTrackTypeFilter(e.target.value); setTrackPage(1); }}
-                    className="bg-gray-800 border border-gray-700 text-white rounded px-2 py-1 text-xs w-1/2"
+                    className="bg-space-800 border border-space-700 text-white rounded px-2 py-1 text-xs w-1/2"
                   >
                     <option value="ALL">All Topologies</option>
                     <option value="complex_network">Complex Network</option>
@@ -801,7 +765,7 @@ export default function EventEvolutionView() {
                       className={`p-3 rounded-lg border cursor-pointer transition-all ${
                         isSelected
                           ? 'bg-emerald-950/30 border-emerald-500/50'
-                          : 'bg-gray-850 border-gray-800 hover:bg-gray-800'
+                          : 'bg-space-850 border-space-800 hover:bg-space-800'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -809,11 +773,11 @@ export default function EventEvolutionView() {
                           <span className={`w-2 h-2 rounded-full ${isModis ? 'bg-amber-400' : 'bg-cyan-400'}`} />
                           {track.track_id}
                         </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-space-800 text-space-300 border border-space-700">
                           {track.track_type}
                         </span>
                       </div>
-                      <div className="mt-2 text-[11px] text-gray-400 grid grid-cols-2 gap-1">
+                      <div className="mt-2 text-[11px] text-space-400 grid grid-cols-2 gap-1">
                         <div>Clusters: <span className="text-white font-medium">{track.cluster_count}</span></div>
                         <div>Obs: <span className="text-white font-medium">{track.observation_count}</span></div>
                         <div>Span: <span className="text-white font-medium">{formatHours(track.total_duration_hours)}</span></div>
@@ -825,20 +789,20 @@ export default function EventEvolutionView() {
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between pt-3 border-t border-gray-800 text-xs text-gray-400">
+              <div className="flex items-center justify-between pt-3 border-t border-space-800 text-xs text-space-400">
                 <span>Page {trackPage} of {Math.ceil(tracksTotal / 15) || 1}</span>
                 <div className="flex gap-1">
                   <button
                     disabled={trackPage <= 1}
                     onClick={() => setTrackPage((p) => p - 1)}
-                    className="px-2 py-1 bg-gray-800 rounded disabled:opacity-40"
+                    className="px-2 py-1 bg-space-800 rounded disabled:opacity-40"
                   >
                     Prev
                   </button>
                   <button
                     disabled={trackPage >= Math.ceil(tracksTotal / 15)}
                     onClick={() => setTrackPage((p) => p + 1)}
-                    className="px-2 py-1 bg-gray-800 rounded disabled:opacity-40"
+                    className="px-2 py-1 bg-space-800 rounded disabled:opacity-40"
                   >
                     Next
                   </button>
@@ -850,19 +814,19 @@ export default function EventEvolutionView() {
           {/* Timeline Detail View */}
           <div className="lg:col-span-2 space-y-4">
             {selectedTrackDetail && (
-              <Card className="bg-gray-900 border-gray-800 p-5">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-gray-800 pb-4">
+              <Card className="bg-space-900 border-space-800 p-5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-space-800 pb-4">
                   <div>
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
                       <Clock className="w-5 h-5 text-emerald-400" />
                       Track Timeline: {selectedTrackDetail.track_id}
                     </h3>
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-space-400 mt-1">
                       {selectedTrackDetail.first_observed_utc} &rarr; {selectedTrackDetail.last_observed_utc} ({formatHours(selectedTrackDetail.total_duration_hours)})
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-1 text-xs rounded bg-gray-800 text-gray-200 border border-gray-700">
+                    <span className="px-2.5 py-1 text-xs rounded bg-space-800 text-space-200 border border-space-700">
                       {selectedTrackDetail.track_type}
                     </span>
                     <button
@@ -879,43 +843,43 @@ export default function EventEvolutionView() {
                 </div>
 
                 {/* Timeline Step Sequence */}
-                <div className="mt-6 space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-gray-800">
+                <div className="mt-6 space-y-6 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-space-800">
                   {timelineData.map((step) => (
                     <div key={step.step_index} className="relative flex items-start gap-4 ml-1">
                       {/* Timeline node marker */}
-                      <div className="w-6 h-6 rounded-full bg-emerald-600 border-2 border-gray-900 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 z-10">
+                      <div className="w-6 h-6 rounded-full bg-emerald-600 border-2 border-space-900 flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 z-10">
                         {step.step_index}
                       </div>
 
                       {/* Content Box */}
-                      <div className="flex-1 bg-gray-850 p-4 rounded-lg border border-gray-800 text-xs">
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-800/60 pb-2">
+                      <div className="flex-1 bg-space-850 p-4 rounded-lg border border-space-800 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-space-800/60 pb-2">
                           <span className="font-semibold text-white text-sm">{step.cluster_id}</span>
-                          <span className="text-gray-400">{step.timestamp_utc} ({step.primary_satellite})</span>
+                          <span className="text-space-400">{step.timestamp_utc} ({step.primary_satellite})</span>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-gray-300">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-space-300">
                           <div>
-                            <span className="text-gray-500 block text-[10px]">Observations</span>
+                            <span className="text-space-500 block text-[10px]">Observations</span>
                             <span className="font-medium text-white">{step.observation_count} points</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block text-[10px]">Snapshot FRP</span>
+                            <span className="text-space-500 block text-[10px]">Snapshot FRP</span>
                             <span className="font-medium text-amber-400">{formatMW(step.sum_frp_mw)}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block text-[10px]">Centroid</span>
-                            <span className="font-medium text-gray-300">{step.centroid_latitude.toFixed(3)}, {step.centroid_longitude.toFixed(3)}</span>
+                            <span className="text-space-500 block text-[10px]">Centroid</span>
+                            <span className="font-medium text-space-300">{step.centroid_latitude.toFixed(3)}, {step.centroid_longitude.toFixed(3)}</span>
                           </div>
                           <div>
-                            <span className="text-gray-500 block text-[10px]">Degree In/Out</span>
-                            <span className="font-medium text-gray-300">{step.in_degree} in / {step.out_degree} out</span>
+                            <span className="text-space-500 block text-[10px]">Degree In/Out</span>
+                            <span className="font-medium text-space-300">{step.in_degree} in / {step.out_degree} out</span>
                           </div>
                         </div>
 
                         {/* Transition from previous */}
                         {step.temporal_gap_to_prev_hours !== null && (
-                          <div className="mt-3 bg-gray-900/60 p-2 rounded border border-gray-800/80 flex flex-wrap items-center justify-between text-[11px] text-gray-400">
+                          <div className="mt-3 bg-space-900/60 p-2 rounded border border-space-800/80 flex flex-wrap items-center justify-between text-[11px] text-space-400">
                             <span>Gap from prev step: <strong className="text-white">{formatHours(step.temporal_gap_to_prev_hours)}</strong></span>
                             <span>Centroid shift: <strong className="text-white">{formatKm(step.centroid_dist_to_prev_km)}</strong></span>
                             <span>&Delta; FRP: <strong className={step.delta_frp_from_prev_mw >= 0 ? 'text-amber-400' : 'text-blue-400'}>{step.delta_frp_from_prev_mw >= 0 ? `+${step.delta_frp_from_prev_mw}` : step.delta_frp_from_prev_mw} MW</strong></span>
@@ -936,14 +900,14 @@ export default function EventEvolutionView() {
       {/* ========================================================================= */}
       {subTab === 'lineage' && (
         <div className="space-y-4">
-          <Card className="bg-gray-900 border-gray-800 p-5">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-gray-800 pb-4">
+          <Card className="bg-space-900 border-space-800 p-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-space-800 pb-4">
               <div>
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <GitMerge className="w-5 h-5 text-purple-400" />
                   Lineage Graph Transitions: {selectedTrackId || 'None Selected'}
                 </h3>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-xs text-space-400 mt-1">
                   Directed continuity transitions showing predecessor clusters, successors, branching splits, and converging merges.
                 </p>
               </div>
@@ -951,54 +915,51 @@ export default function EventEvolutionView() {
 
             {/* Lineage Table */}
             {lineageData && lineageData.edges.length > 0 ? (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-850 text-gray-400 uppercase font-medium border-b border-gray-800">
-                    <tr>
-                      <th className="py-2.5 px-3">Predecessor (Earlier)</th>
-                      <th className="py-2.5 px-3">Successor (Later)</th>
-                      <th className="py-2.5 px-3">Temporal Gap</th>
-                      <th className="py-2.5 px-3">Centroid Dist</th>
-                      <th className="py-2.5 px-3">Lineage Classification</th>
-                      <th className="py-2.5 px-3">Heuristic Score</th>
-                      <th className="py-2.5 px-3">Ambiguity</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-800 text-gray-300">
-                    {lineageData.edges.map((edge, idx) => (
-                      <tr key={idx} className="hover:bg-gray-850/60">
-                        <td className="py-2 px-3 font-semibold text-white">{edge.source_cluster_id}</td>
-                        <td className="py-2 px-3 font-semibold text-white">{edge.target_cluster_id}</td>
-                        <td className="py-2 px-3">{formatHours(edge.temporal_gap_hours)}</td>
-                        <td className="py-2 px-3">{formatKm(edge.centroid_distance_km)}</td>
-                        <td className="py-2 px-3">
-                          <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
-                            edge.classification === 'possible_split'
-                              ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
-                              : edge.classification === 'possible_merge'
-                              ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
-                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          }`}>
-                            {edge.classification}
+              <div className="mt-4">
+                <DataTable
+                  headers={[
+                    'Predecessor (Earlier)',
+                    'Successor (Later)',
+                    'Temporal Gap',
+                    'Centroid Dist',
+                    'Lineage Classification',
+                    'Heuristic Score',
+                    'Ambiguity',
+                  ]}
+                >
+                  {lineageData.edges.map((edge, idx) => (
+                    <tr key={idx} className="hover:bg-white/[0.04] transition-colors">
+                      <td className="py-2.5 px-4 font-mono font-semibold text-white">{edge.source_cluster_id}</td>
+                      <td className="py-2.5 px-4 font-mono font-semibold text-white">{edge.target_cluster_id}</td>
+                      <td className="py-2.5 px-4 font-mono text-space-300">{formatHours(edge.temporal_gap_hours)}</td>
+                      <td className="py-2.5 px-4 font-mono text-space-300">{formatKm(edge.centroid_distance_km)}</td>
+                      <td className="py-2.5 px-4">
+                        <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                          edge.classification === 'possible_split'
+                            ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+                            : edge.classification === 'possible_merge'
+                            ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        }`}>
+                          {edge.classification}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 font-mono font-medium text-white">{edge.heuristic_score.toFixed(4)}</td>
+                      <td className="py-2.5 px-4">
+                        {edge.is_ambiguous ? (
+                          <span className="text-amber-400 font-semibold flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Ambiguous
                           </span>
-                        </td>
-                        <td className="py-2 px-3 font-medium text-white">{edge.heuristic_score.toFixed(4)}</td>
-                        <td className="py-2 px-3">
-                          {edge.is_ambiguous ? (
-                            <span className="text-amber-400 font-semibold flex items-center gap-1">
-                              <AlertTriangle className="w-3 h-3" /> Ambiguous
-                            </span>
-                          ) : (
-                            <span className="text-gray-500">Unambiguous</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        ) : (
+                          <span className="text-space-500">Unambiguous</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </DataTable>
               </div>
             ) : (
-              <div className="py-12 text-center text-gray-500 text-sm">
+              <div className="py-12 text-center text-space-500 text-sm">
                 No lineage edges found for this track. This is an isolated cluster without multi-overpass continuity.
               </div>
             )}
@@ -1011,18 +972,18 @@ export default function EventEvolutionView() {
       {/* ========================================================================= */}
       {subTab === 'runner' && (
         <div className="space-y-6">
-          <Card className="bg-gray-900 border-gray-800 p-5">
+          <Card className="bg-space-900 border-space-800 p-5">
             <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
               <Sliders className="w-4 h-4 text-emerald-400" />
               Configure & Trigger Temporal Evolution Tracking
             </h3>
-            <p className="text-xs text-gray-400 mb-4">
+            <p className="text-xs text-space-400 mb-4">
               Executes same-sensor spatial-temporal continuity candidate generation and track construction using DuckDB and spherical Haversine distance.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
               <div>
-                <label className="text-gray-400 block mb-1">Max Temporal Gap (hours)</label>
+                <label className="text-space-400 block mb-1">Max Temporal Gap (hours)</label>
                 <input
                   type="number"
                   step="1"
@@ -1030,12 +991,12 @@ export default function EventEvolutionView() {
                   max="72"
                   value={runConfig.max_temporal_gap_hours}
                   onChange={(e) => setRunConfig({ ...runConfig, max_temporal_gap_hours: parseFloat(e.target.value) || 24.0 })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
               <div>
-                <label className="text-gray-400 block mb-1">Max Centroid Dist (km)</label>
+                <label className="text-space-400 block mb-1">Max Centroid Dist (km)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -1043,12 +1004,12 @@ export default function EventEvolutionView() {
                   max="30"
                   value={runConfig.max_spatial_distance_km}
                   onChange={(e) => setRunConfig({ ...runConfig, max_spatial_distance_km: parseFloat(e.target.value) || 5.0 })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
               <div>
-                <label className="text-gray-400 block mb-1">Max Centroid Cap (km)</label>
+                <label className="text-space-400 block mb-1">Max Centroid Cap (km)</label>
                 <input
                   type="number"
                   step="0.5"
@@ -1056,16 +1017,16 @@ export default function EventEvolutionView() {
                   max="50.0"
                   value={runConfig.max_centroid_cap_km}
                   onChange={(e) => setRunConfig({ ...runConfig, max_centroid_cap_km: parseFloat(e.target.value) || 7.5 })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
               <div>
-                <label className="text-gray-400 block mb-1">Candidate Strategy</label>
+                <label className="text-space-400 block mb-1">Candidate Strategy</label>
                 <select
                   value={runConfig.candidate_selection_strategy}
                   onChange={(e) => setRunConfig({ ...runConfig, candidate_selection_strategy: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 >
                   <option value="successive_period">Successive Period (SOP)</option>
                   <option value="all_in_window">All in Window (Dense)</option>
@@ -1073,7 +1034,7 @@ export default function EventEvolutionView() {
               </div>
 
               <div>
-                <label className="text-gray-400 block mb-1">Ambiguity Delta</label>
+                <label className="text-space-400 block mb-1">Ambiguity Delta</label>
                 <input
                   type="number"
                   step="0.05"
@@ -1081,48 +1042,50 @@ export default function EventEvolutionView() {
                   max="0.5"
                   value={runConfig.ambiguity_delta_threshold}
                   onChange={(e) => setRunConfig({ ...runConfig, ambiguity_delta_threshold: parseFloat(e.target.value) || 0.15 })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
               <div>
-                <label className="text-gray-400 block mb-1">Experiment Name</label>
+                <label className="text-space-400 block mb-1">Experiment Name</label>
                 <input
                   type="text"
                   value={runConfig.experiment_name}
                   onChange={(e) => setRunConfig({ ...runConfig, experiment_name: e.target.value })}
-                  className="w-full bg-gray-800 border border-gray-700 rounded px-2.5 py-1.5 text-white"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-800">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-300">
+            <div className="mt-4 flex items-center justify-between pt-4 border-t border-space-800">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-space-300">
                 <input
                   type="checkbox"
                   checked={runConfig.use_extent_aware}
                   onChange={(e) => setRunConfig({ ...runConfig, use_extent_aware: e.target.checked })}
-                  className="rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-0"
+                  className="rounded bg-space-800 border-space-700 text-emerald-500 focus:ring-0"
                 />
                 Use cluster spatial extent when evaluating candidate continuity
               </label>
 
-              <button
+              <ClayButton
                 onClick={handleTriggerRun}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded font-medium text-xs flex items-center gap-2"
+                variant="primary"
+                size="sm"
+                className="flex items-center gap-2"
               >
                 <Play className="w-3.5 h-3.5" />
                 {isSubmitting ? 'Processing Evolution...' : 'Trigger Evolution Tracking'}
-              </button>
+              </ClayButton>
             </div>
 
             {/* Live Status Bar */}
             {jobStatus && (
-              <div className="mt-4 p-3 bg-gray-850 rounded border border-gray-750 text-xs flex items-center justify-between">
+              <div className="mt-4 p-3 bg-space-850 rounded border border-space-750 text-xs flex items-center justify-between">
                 <div>
                   <span className="font-semibold text-white">Status: {jobStatus.status}</span>
-                  <span className="text-gray-400 ml-2">({jobStatus.message})</span>
+                  <span className="text-space-400 ml-2">({jobStatus.message})</span>
                 </div>
                 <span className="text-emerald-400 font-bold">{jobStatus.progress_percent || 0}%</span>
               </div>
@@ -1130,41 +1093,36 @@ export default function EventEvolutionView() {
           </Card>
 
           {/* Historical Experiments Log */}
-          <Card className="bg-gray-900 border-gray-800 p-5">
+          <Card className="bg-space-900 border-space-800 p-5">
             <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
               <Activity className="w-4 h-4 text-emerald-400" />
               Evolution Benchmark & Experiment History
             </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-850 text-gray-400 uppercase font-medium border-b border-gray-800">
-                  <tr>
-                    <th className="py-2.5 px-3">Experiment</th>
-                    <th className="py-2.5 px-3">Executed At</th>
-                    <th className="py-2.5 px-3">Window (h)</th>
-                    <th className="py-2.5 px-3">Radius (km)</th>
-                    <th className="py-2.5 px-3">MODIS Tracks</th>
-                    <th className="py-2.5 px-3">VIIRS Tracks</th>
-                    <th className="py-2.5 px-3">Total Rel.</th>
-                    <th className="py-2.5 px-3">Runtime</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800 text-gray-300">
-                  {experiments.map((exp, idx) => (
-                    <tr key={idx} className="hover:bg-gray-850/60">
-                      <td className="py-2 px-3 font-semibold text-white">{exp.experiment_name}</td>
-                      <td className="py-2 px-3 text-gray-400">{exp.executed_at}</td>
-                      <td className="py-2 px-3">{exp.max_temporal_gap_hours}</td>
-                      <td className="py-2 px-3">{exp.max_spatial_distance_km}</td>
-                      <td className="py-2 px-3 font-medium text-amber-400">{exp.modis_tracks_count}</td>
-                      <td className="py-2 px-3 font-medium text-cyan-400">{exp.viirs_tracks_count}</td>
-                      <td className="py-2 px-3 font-bold text-white">{exp.modis_relationships_count + exp.viirs_relationships_count}</td>
-                      <td className="py-2 px-3 text-emerald-400 font-medium">{exp.runtime_seconds}s</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              headers={[
+                'Experiment',
+                'Executed At',
+                'Window (h)',
+                'Radius (km)',
+                { label: 'MODIS Tracks', className: 'text-modis' },
+                { label: 'VIIRS Tracks', className: 'text-viirs' },
+                'Total Rel.',
+                'Runtime',
+              ]}
+            >
+              {experiments.map((exp, idx) => (
+                <tr key={idx} className="hover:bg-white/[0.04] transition-colors">
+                  <td className="py-2.5 px-4 font-mono font-semibold text-white">{exp.experiment_name}</td>
+                  <td className="py-2.5 px-4 font-mono text-space-400">{exp.executed_at}</td>
+                  <td className="py-2.5 px-4 font-mono text-space-300">{exp.max_temporal_gap_hours}</td>
+                  <td className="py-2.5 px-4 font-mono text-space-300">{exp.max_spatial_distance_km}</td>
+                  <td className="py-2.5 px-4 font-mono font-medium text-modis">{exp.modis_tracks_count}</td>
+                  <td className="py-2.5 px-4 font-mono font-medium text-viirs">{exp.viirs_tracks_count}</td>
+                  <td className="py-2.5 px-4 font-mono font-bold text-white">{exp.modis_relationships_count + exp.viirs_relationships_count}</td>
+                  <td className="py-2.5 px-4 font-mono text-emerald-400 font-medium">{exp.runtime_seconds}s</td>
+                </tr>
+              ))}
+            </DataTable>
           </Card>
         </div>
       )}

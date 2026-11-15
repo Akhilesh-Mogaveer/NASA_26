@@ -35,9 +35,14 @@ import {
   Pie, 
   Cell 
 } from 'recharts';
-import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip as MapTooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip as MapTooltip } from 'react-leaflet';
 import Card from '../common/Card';
 import StatusBadge from '../common/StatusBadge';
+import SubTabs from '../common/SubTabs';
+import DataTable from '../common/DataTable';
+import ClayButton from '../common/ClayButton';
+import ChangeMapView from '../common/ChangeMapView';
+import { SENSOR_COLORS, EVENT_COLORS, MAP_THEME } from '../../theme/tokens';
 import { 
   getClusteringSummary, 
   getClusters, 
@@ -54,13 +59,6 @@ import {
   getEventAssociationStatus
 } from '../../api/client';
 
-function ChangeMapView({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
 
 export default function EventExplorerView() {
   const [loading, setLoading] = useState(true);
@@ -351,31 +349,18 @@ export default function EventExplorerView() {
         </div>
 
         {/* Sub-tab Navigation */}
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-space-800/80 pt-4">
-          {[
-            { id: 'overview', label: 'Overview & Graph Metrics', icon: Activity },
-            { id: 'map', label: 'Interactive Event Map', icon: MapPin },
-            { id: 'clusters', label: 'Cluster Explorer', icon: Layers },
-            { id: 'relationships', label: 'Cross-Sensor Relationships', icon: GitMerge },
-            { id: 'runner', label: 'Clustering & Association Runner', icon: Cpu },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const active = subTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setSubTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  active
-                    ? 'bg-accent-blue text-white shadow-md shadow-accent-blue/20'
-                    : 'bg-space-800/60 hover:bg-space-750 text-space-300'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            );
-          })}
+        <div className="mt-5 border-t border-space-800/80 pt-4">
+          <SubTabs
+            tabs={[
+              { id: 'overview', label: 'Overview & Graph Metrics', icon: Activity },
+              { id: 'map', label: 'Interactive Event Map', icon: MapPin },
+              { id: 'clusters', label: 'Cluster Explorer', icon: Layers },
+              { id: 'relationships', label: 'Cross-Sensor Relationships', icon: GitMerge },
+              { id: 'runner', label: 'Clustering & Association Runner', icon: Cpu },
+            ]}
+            activeTab={subTab}
+            onChange={setSubTab}
+          />
         </div>
       </div>
 
@@ -640,7 +625,7 @@ export default function EventExplorerView() {
               <MapContainer
                 center={mapCenter}
                 zoom={mapZoom}
-                style={{ height: '100%', width: '100%', background: '#0a0e17' }}
+                style={{ height: '100%', width: '100%', background: MAP_THEME.backgroundColor }}
                 scrollWheelZoom={true}
               >
                 <ChangeMapView center={mapCenter} zoom={mapZoom} />
@@ -657,7 +642,7 @@ export default function EventExplorerView() {
                       key={line.relationship_id}
                       positions={line.coordinates}
                       pathOptions={{
-                        color: isAmbiguous ? '#f59e0b' : '#a855f7',
+                        color: isAmbiguous ? SENSOR_COLORS.ambiguous : EVENT_COLORS.split,
                         weight: isAmbiguous ? 1.8 : 2.2,
                         dashArray: isAmbiguous ? '5, 5' : null,
                         opacity: 0.8,
@@ -679,7 +664,7 @@ export default function EventExplorerView() {
                 {/* Cluster Centroid Markers */}
                 {filteredMapClusters.map((c) => {
                   const isModis = c.sensor.toUpperCase() === 'MODIS';
-                  const fillColor = isModis ? '#3b82f6' : '#f97316';
+                  const fillColor = isModis ? SENSOR_COLORS.modis : SENSOR_COLORS.viirs;
                   const radius = Math.min(18, Math.max(5, Math.log2(c.observation_count + 1) * 3));
 
                   return (
@@ -690,7 +675,7 @@ export default function EventExplorerView() {
                       pathOptions={{
                         fillColor: fillColor,
                         fillOpacity: 0.8,
-                        color: '#ffffff',
+                        color: 'white',
                         weight: 1.5,
                       }}
                       eventHandlers={{
@@ -777,48 +762,43 @@ export default function EventExplorerView() {
               </div>
 
               {/* Clusters Table */}
-              <div className="overflow-x-auto rounded-lg border border-space-800">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-space-950 text-space-400 border-b border-space-800">
-                    <tr>
-                      <th className="py-2.5 px-3">Cluster ID</th>
-                      <th className="py-2.5 px-3">Sensor</th>
-                      <th className="py-2.5 px-3 text-right">Observations</th>
-                      <th className="py-2.5 px-3 text-right">Core / Border</th>
-                      <th className="py-2.5 px-3 text-right text-amber-400">Sum FRP</th>
-                      <th className="py-2.5 px-3 text-right">Spread</th>
-                      <th className="py-2.5 px-3 text-right">Duration</th>
+              <DataTable
+                headers={[
+                  'Cluster ID',
+                  'Sensor',
+                  { label: 'Observations', className: 'text-right' },
+                  { label: 'Core / Border', className: 'text-right' },
+                  { label: 'Sum FRP', className: 'text-right text-amber-400' },
+                  { label: 'Spread', className: 'text-right' },
+                  { label: 'Duration', className: 'text-right' },
+                ]}
+              >
+                {clustersList.map((c) => {
+                  const isSelected = selectedCluster?.cluster_id === c.cluster_id;
+                  const isModis = c.sensor.toUpperCase() === 'MODIS';
+                  return (
+                    <tr
+                      key={c.cluster_id}
+                      onClick={() => handleSelectCluster(c)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected ? 'bg-space-800 font-bold' : 'hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <td className="py-2.5 px-4 font-mono text-white">{c.cluster_id}</td>
+                      <td className="py-2.5 px-4 font-mono">
+                        <span className={isModis ? 'text-modis font-semibold' : 'text-viirs font-semibold'}>
+                          {c.sensor}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-4 text-right font-mono text-white font-bold">{c.observation_count?.toLocaleString()}</td>
+                      <td className="py-2.5 px-4 text-right font-mono text-space-300">{c.core_count} / {c.border_count}</td>
+                      <td className="py-2.5 px-4 text-right font-mono text-amber-400">{c.sum_frp_mw?.toLocaleString()} MW</td>
+                      <td className="py-2.5 px-4 text-right font-mono text-space-300">{c.mean_spatial_spread_km} km</td>
+                      <td className="py-2.5 px-4 text-right font-mono text-space-300">{c.duration_minutes} min</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-space-850 bg-space-900/40">
-                    {clustersList.map((c) => {
-                      const isSelected = selectedCluster?.cluster_id === c.cluster_id;
-                      const isModis = c.sensor.toUpperCase() === 'MODIS';
-                      return (
-                        <tr
-                          key={c.cluster_id}
-                          onClick={() => handleSelectCluster(c)}
-                          className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-space-800 font-bold' : 'hover:bg-space-850/60'
-                          }`}
-                        >
-                          <td className="py-2 px-3 text-white">{c.cluster_id}</td>
-                          <td className="py-2 px-3">
-                            <span className={isModis ? 'text-modis font-semibold' : 'text-viirs font-semibold'}>
-                              {c.sensor}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3 text-right text-white font-bold">{c.observation_count?.toLocaleString()}</td>
-                          <td className="py-2 px-3 text-right text-space-300">{c.core_count} / {c.border_count}</td>
-                          <td className="py-2 px-3 text-right text-amber-400">{c.sum_frp_mw?.toLocaleString()} MW</td>
-                          <td className="py-2 px-3 text-right text-space-300">{c.mean_spatial_spread_km} km</td>
-                          <td className="py-2 px-3 text-right text-space-300">{c.duration_minutes} min</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                  );
+                })}
+              </DataTable>
 
               {/* Pagination */}
               <div className="flex items-center justify-between text-xs font-mono pt-3">
@@ -826,20 +806,22 @@ export default function EventExplorerView() {
                   Page {clusterPage} of {Math.max(1, Math.ceil(clustersTotal / pageSize))} ({clustersTotal?.toLocaleString()} clusters)
                 </span>
                 <div className="flex items-center gap-2">
-                  <button
+                  <ClayButton
                     onClick={() => setClusterPage((p) => Math.max(1, p - 1))}
                     disabled={clusterPage === 1}
-                    className="px-3 py-1 rounded bg-space-800 hover:bg-space-750 disabled:opacity-40 text-space-200"
+                    variant="ghost"
+                    size="sm"
                   >
                     Previous
-                  </button>
-                  <button
+                  </ClayButton>
+                  <ClayButton
                     onClick={() => setClusterPage((p) => p + 1)}
                     disabled={clusterPage * pageSize >= clustersTotal}
-                    className="px-3 py-1 rounded bg-space-800 hover:bg-space-750 disabled:opacity-40 text-space-200"
+                    variant="ghost"
+                    size="sm"
                   >
                     Next
-                  </button>
+                  </ClayButton>
                 </div>
               </div>
             </Card>
@@ -956,45 +938,40 @@ export default function EventExplorerView() {
               </div>
 
               {/* Table */}
-              <div className="overflow-x-auto rounded-lg border border-space-800">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-space-950 text-space-400 border-b border-space-800">
-                    <tr>
-                      <th className="py-2.5 px-3">Relationship ID</th>
-                      <th className="py-2.5 px-3 text-modis">MODIS Cluster</th>
-                      <th className="py-2.5 px-3 text-viirs">VIIRS Cluster</th>
-                      <th className="py-2.5 px-3 text-right">Pairs</th>
-                      <th className="py-2.5 px-3 text-right">Centroid Dist</th>
-                      <th className="py-2.5 px-3 text-right text-purple-400">Score</th>
-                      <th className="py-2.5 px-3 text-center">Multiplicity</th>
-                      <th className="py-2.5 px-3 text-center">Status</th>
+              <DataTable
+                headers={[
+                  'Relationship ID',
+                  { label: 'MODIS Cluster', className: 'text-modis' },
+                  { label: 'VIIRS Cluster', className: 'text-viirs' },
+                  { label: 'Pairs', className: 'text-right' },
+                  { label: 'Centroid Dist', className: 'text-right' },
+                  { label: 'Score', className: 'text-right text-purple-400' },
+                  { label: 'Multiplicity', className: 'text-center' },
+                  { label: 'Status', className: 'text-center' },
+                ]}
+              >
+                {relationshipsList.map((r) => {
+                  const isSelected = selectedRel?.relationship_id === r.relationship_id;
+                  return (
+                    <tr
+                      key={r.relationship_id}
+                      onClick={() => setSelectedRel(r)}
+                      className={`cursor-pointer transition-colors ${
+                        isSelected ? 'bg-space-800 font-bold' : 'hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      <td className="py-2.5 px-4 font-mono text-white">{r.relationship_id}</td>
+                      <td className="py-2.5 px-4 font-mono text-modis">{r.modis_cluster_id}</td>
+                      <td className="py-2.5 px-4 font-mono text-viirs">{r.viirs_cluster_id}</td>
+                      <td className="py-2.5 px-4 text-right font-mono font-bold text-white">{r.supporting_pairs_count}</td>
+                      <td className="py-2.5 px-4 text-right font-mono text-space-300">{r.centroid_distance_km} km</td>
+                      <td className="py-2.5 px-4 text-right font-mono text-purple-400 font-bold">{r.heuristic_event_score}</td>
+                      <td className="py-2.5 px-4 text-center">{getMultiplicityBadge(r.multiplicity_type)}</td>
+                      <td className="py-2.5 px-4 text-center">{getClassificationBadge(r.classification)}</td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-space-850 bg-space-900/40">
-                    {relationshipsList.map((r) => {
-                      const isSelected = selectedRel?.relationship_id === r.relationship_id;
-                      return (
-                        <tr
-                          key={r.relationship_id}
-                          onClick={() => setSelectedRel(r)}
-                          className={`cursor-pointer transition-colors ${
-                            isSelected ? 'bg-space-800 font-bold' : 'hover:bg-space-850/60'
-                          }`}
-                        >
-                          <td className="py-2 px-3 text-white">{r.relationship_id}</td>
-                          <td className="py-2 px-3 text-modis">{r.modis_cluster_id}</td>
-                          <td className="py-2 px-3 text-viirs">{r.viirs_cluster_id}</td>
-                          <td className="py-2 px-3 text-right font-bold text-white">{r.supporting_pairs_count}</td>
-                          <td className="py-2 px-3 text-right text-space-300">{r.centroid_distance_km} km</td>
-                          <td className="py-2 px-3 text-right text-purple-400 font-bold">{r.heuristic_event_score}</td>
-                          <td className="py-2 px-3 text-center">{getMultiplicityBadge(r.multiplicity_type)}</td>
-                          <td className="py-2 px-3 text-center">{getClassificationBadge(r.classification)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                  );
+                })}
+              </DataTable>
 
               {/* Pagination */}
               <div className="flex items-center justify-between text-xs font-mono pt-3">
@@ -1002,20 +979,22 @@ export default function EventExplorerView() {
                   Page {relPage} of {Math.max(1, Math.ceil(relationshipsTotal / pageSize))} ({relationshipsTotal?.toLocaleString()} relationships)
                 </span>
                 <div className="flex items-center gap-2">
-                  <button
+                  <ClayButton
                     onClick={() => setRelPage((p) => Math.max(1, p - 1))}
                     disabled={relPage === 1}
-                    className="px-3 py-1 rounded bg-space-800 hover:bg-space-750 disabled:opacity-40 text-space-200"
+                    variant="ghost"
+                    size="sm"
                   >
                     Previous
-                  </button>
-                  <button
+                  </ClayButton>
+                  <ClayButton
                     onClick={() => setRelPage((p) => p + 1)}
                     disabled={relPage * pageSize >= relationshipsTotal}
-                    className="px-3 py-1 rounded bg-space-800 hover:bg-space-750 disabled:opacity-40 text-space-200"
+                    variant="ghost"
+                    size="sm"
                   >
                     Next
-                  </button>
+                  </ClayButton>
                 </div>
               </div>
             </Card>
@@ -1073,7 +1052,7 @@ export default function EventExplorerView() {
                   step="0.25"
                   value={jobRadius}
                   onChange={(e) => setJobRadius(e.target.value)}
-                  className="w-full bg-space-900 border border-space-700 rounded px-2.5 py-1.5 text-space-200 font-mono"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-space-200 font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
@@ -1084,7 +1063,7 @@ export default function EventExplorerView() {
                   step="5"
                   value={jobWindow}
                   onChange={(e) => setJobWindow(e.target.value)}
-                  className="w-full bg-space-900 border border-space-700 rounded px-2.5 py-1.5 text-space-200 font-mono"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-space-200 font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
@@ -1095,14 +1074,15 @@ export default function EventExplorerView() {
                   step="1"
                   value={jobMinSamples}
                   onChange={(e) => setJobMinSamples(e.target.value)}
-                  className="w-full bg-space-900 border border-space-700 rounded px-2.5 py-1.5 text-space-200 font-mono"
+                  className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-space-200 font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                 />
               </div>
 
-              <button
+              <ClayButton
                 onClick={handleRunClustering}
                 disabled={isStartingClustering || clusteringJobStatus?.status === 'running'}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-accent-blue hover:bg-accent-blue/90 disabled:opacity-50 text-white font-bold transition-all shadow-md"
+                variant="primary"
+                className="w-full flex items-center justify-center gap-2 py-2.5"
               >
                 {isStartingClustering || clusteringJobStatus?.status === 'running' ? (
                   <>
@@ -1115,7 +1095,7 @@ export default function EventExplorerView() {
                     <span>Run Independent Clustering</span>
                   </>
                 )}
-              </button>
+              </ClayButton>
 
               {clusteringJobStatus && (
                 <div className="p-3 rounded-lg bg-space-950 border border-space-800 font-mono text-[11px] text-space-300">

@@ -36,9 +36,15 @@ import {
   Tooltip, 
   Legend 
 } from 'recharts';
-import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, Tooltip as MapTooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, Tooltip as MapTooltip } from 'react-leaflet';
 import Card from '../common/Card';
 import StatusBadge from '../common/StatusBadge';
+import SubTabs from '../common/SubTabs';
+import DataTable from '../common/DataTable';
+import GlassTooltip from '../common/GlassTooltip';
+import ClayButton from '../common/ClayButton';
+import ChangeMapView from '../common/ChangeMapView';
+import { SENSOR_COLORS, CHART_THEME, MAP_THEME } from '../../theme/tokens';
 import { 
   getMatchingSummary, 
   getMatchingEvaluation, 
@@ -53,14 +59,6 @@ import {
   getFullScaleBenchmarks
 } from '../../api/client';
 
-// Helper component to center map programmatically
-function ChangeMapView({ center, zoom }) {
-  const map = useMap();
-  useEffect(() => {
-    map.setView(center, zoom);
-  }, [center, zoom, map]);
-  return null;
-}
 
 export default function MatchingView() {
   const [loading, setLoading] = useState(true);
@@ -340,31 +338,18 @@ export default function MatchingView() {
         </div>
 
         {/* Sub-tab Navigation */}
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-space-800/80 pt-4">
-          {[
-            { id: 'overview', label: 'Overview & Benchmarks', icon: Activity },
-            { id: 'map', label: 'Interactive Matching Map (Phase 4.4)', icon: MapPin },
-            { id: 'full_scale', label: 'Full-Scale & Partition Monitor (Phase 4.5)', icon: Cpu },
-            { id: 'sensitivity', label: 'Sensitivity Matrix (12 Combinations)', icon: Sliders },
-            { id: 'associations', label: 'Candidate Associations Explorer', icon: Layers },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const active = subTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setSubTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  active
-                    ? 'bg-accent-blue text-white shadow-md shadow-accent-blue/20'
-                    : 'bg-space-800/60 hover:bg-space-750 text-space-300'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {tab.label}
-              </button>
-            );
-          })}
+        <div className="mt-5 border-t border-space-800/80 pt-4">
+          <SubTabs
+            tabs={[
+              { id: 'overview', label: 'Overview & Benchmarks', icon: Activity },
+              { id: 'map', label: 'Interactive Matching Map (Phase 4.4)', icon: MapPin },
+              { id: 'full_scale', label: 'Full-Scale & Partition Monitor (Phase 4.5)', icon: Cpu },
+              { id: 'sensitivity', label: 'Sensitivity Matrix (12 Combinations)', icon: Sliders },
+              { id: 'associations', label: 'Candidate Associations Explorer', icon: Layers },
+            ]}
+            activeTab={subTab}
+            onChange={setSubTab}
+          />
         </div>
       </div>
 
@@ -674,7 +659,7 @@ export default function MatchingView() {
                   <MapContainer
                     center={mapCenter}
                     zoom={mapZoom}
-                    style={{ height: '100%', width: '100%', background: '#0a0e17' }}
+                    style={{ height: '100%', width: '100%', background: MAP_THEME.backgroundColor }}
                     scrollWheelZoom={true}
                   >
                     <ChangeMapView center={mapCenter} zoom={mapZoom} />
@@ -692,7 +677,7 @@ export default function MatchingView() {
                           key={line.line_id}
                           positions={line.coordinates}
                           pathOptions={{
-                            color: isAmbiguous ? '#f59e0b' : '#38bdf8',
+                            color: isAmbiguous ? SENSOR_COLORS.ambiguous : SENSOR_COLORS.matched,
                             weight: isAmbiguous ? 1.5 : 1.8,
                             dashArray: isAmbiguous ? '4, 4' : null,
                             opacity: 0.75
@@ -718,9 +703,9 @@ export default function MatchingView() {
                       const isMatched = obs.status === 'matched';
 
                       // Distinct colors: MODIS blue, VIIRS orange
-                      const fillColor = isModis ? '#3b82f6' : '#f97316';
+                      const fillColor = isModis ? SENSOR_COLORS.modis : SENSOR_COLORS.viirs;
                       // Outline color: emerald for matched, amber for ambiguous, slate for unmatched
-                      const strokeColor = isAmbiguous ? '#f59e0b' : isMatched ? '#10b981' : '#64748b';
+                      const strokeColor = isAmbiguous ? SENSOR_COLORS.ambiguous : isMatched ? SENSOR_COLORS.matched : SENSOR_COLORS.unmatched;
                       const radius = isModis ? 6 : 4;
 
                       return (
@@ -923,7 +908,7 @@ export default function MatchingView() {
                         step="0.25"
                         value={jobRadius}
                         onChange={(e) => setJobRadius(e.target.value)}
-                        className="w-full bg-space-900 border border-space-700 rounded px-2.5 py-1.5 text-space-200 font-mono"
+                        className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-space-200 font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                       />
                     </div>
                     <div>
@@ -933,7 +918,7 @@ export default function MatchingView() {
                         step="5"
                         value={jobWindow}
                         onChange={(e) => setJobWindow(e.target.value)}
-                        className="w-full bg-space-900 border border-space-700 rounded px-2.5 py-1.5 text-space-200 font-mono"
+                        className="w-full bg-space-950/80 border border-white/10 rounded-xl px-3 py-2 text-space-200 font-mono shadow-inner focus:outline-none focus:border-accent-blue/50"
                       />
                     </div>
                   </div>
@@ -944,10 +929,11 @@ export default function MatchingView() {
                     </div>
                   )}
 
-                  <button
+                  <ClayButton
                     onClick={handleStartJob}
                     disabled={isStartingJob || fullScaleStatus?.status === 'running'}
-                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-accent-blue hover:bg-accent-blue/90 disabled:opacity-50 text-white font-bold transition-all shadow-md"
+                    variant="primary"
+                    className="w-full flex items-center justify-center gap-2 py-2.5"
                   >
                     {isStartingJob ? (
                       <>
@@ -965,7 +951,7 @@ export default function MatchingView() {
                         <span>Run Partitioned Matching</span>
                       </>
                     )}
-                  </button>
+                  </ClayButton>
 
                   <div className="text-[11px] text-space-400">
                     Runs asynchronously via FastAPI background tasks. Uses resumable manifest tracking (<code className="text-space-300">manifest.json</code>) and atomic writes.
@@ -1020,38 +1006,33 @@ export default function MatchingView() {
                     </div>
 
                     {/* Partitions List Table */}
-                    <div className="overflow-x-auto rounded border border-space-800">
-                      <table className="w-full text-left text-xs font-mono">
-                        <thead className="bg-space-950 text-space-400 border-b border-space-800">
-                          <tr>
-                            <th className="py-2 px-2.5">Partition ID</th>
-                            <th className="py-2 px-2.5">Date</th>
-                            <th className="py-2 px-2.5">Status</th>
-                            <th className="py-2 px-2.5 text-right">Pairs Count</th>
-                            <th className="py-2 px-2.5 text-right">Pairs/s</th>
-                            <th className="py-2 px-2.5 text-right">Runtime</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-space-850 bg-space-900/40">
-                          {fullScaleStatus.partitions?.map((p) => (
-                            <tr key={p.partition_id} className="hover:bg-space-850/50">
-                              <td className="py-1.5 px-2.5 font-bold text-white">{p.partition_id}</td>
-                              <td className="py-1.5 px-2.5 text-space-300">{p.date}</td>
-                              <td className="py-1.5 px-2.5">
-                                <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                                  p.status === 'completed' ? 'bg-emerald-950 text-emerald-400' : p.status === 'running' ? 'bg-amber-950 text-amber-400 animate-pulse' : 'bg-space-950 text-space-400'
-                                }`}>
-                                  {p.status}
-                                </span>
-                              </td>
-                              <td className="py-1.5 px-2.5 text-right font-bold text-accent-blue">{p.pairs_count?.toLocaleString()}</td>
-                              <td className="py-1.5 px-2.5 text-right text-emerald-400">{p.throughput_pairs_per_sec || '-'}</td>
-                              <td className="py-1.5 px-2.5 text-right text-space-300">{p.elapsed_seconds ? `${p.elapsed_seconds} s` : '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <DataTable
+                      headers={[
+                        'Partition ID',
+                        'Date',
+                        'Status',
+                        { label: 'Pairs Count', className: 'text-right' },
+                        { label: 'Pairs/s', className: 'text-right' },
+                        { label: 'Runtime', className: 'text-right' },
+                      ]}
+                    >
+                      {fullScaleStatus.partitions?.map((p) => (
+                        <tr key={p.partition_id} className="hover:bg-white/[0.04] transition-colors">
+                          <td className="py-2.5 px-4 font-mono font-bold text-white">{p.partition_id}</td>
+                          <td className="py-2.5 px-4 font-mono text-space-300">{p.date}</td>
+                          <td className="py-2.5 px-4">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
+                              p.status === 'completed' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : p.status === 'running' ? 'bg-amber-950 text-amber-400 border border-amber-800 animate-pulse' : 'bg-space-950 text-space-400 border border-space-800'
+                            }`}>
+                              {p.status}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-accent-blue">{p.pairs_count?.toLocaleString()}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-emerald-400">{p.throughput_pairs_per_sec || '-'}</td>
+                          <td className="py-2.5 px-4 text-right font-mono text-space-300">{p.elapsed_seconds ? `${p.elapsed_seconds} s` : '-'}</td>
+                        </tr>
+                      ))}
+                    </DataTable>
                   </div>
                 ) : (
                   <div className="py-12 text-center text-space-400 text-xs">
@@ -1068,69 +1049,61 @@ export default function MatchingView() {
             subtitle="Verified measured execution metrics across progressive benchmark scales"
           >
             <div className="space-y-4">
-              <div className="overflow-x-auto rounded-lg border border-space-800">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-space-950 text-space-400 border-b border-space-800">
-                    <tr>
-                      <th className="py-2.5 px-3">Benchmark Scale</th>
-                      <th className="py-2.5 px-3 text-right">Observations</th>
-                      <th className="py-2.5 px-3 text-right text-accent-blue">Candidate Pairs</th>
-                      <th className="py-2.5 px-3 text-right">Wall Clock Time</th>
-                      <th className="py-2.5 px-3 text-right text-emerald-400">Throughput (pairs/s)</th>
-                      <th className="py-2.5 px-3 text-right">Traced RAM</th>
-                      <th className="py-2.5 px-3 text-right">Process RSS</th>
-                      <th className="py-2.5 px-3">Execution Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-space-850 bg-space-900/50">
-                    {/* Stage 1 */}
-                    <tr className="hover:bg-space-800/40">
-                      <td className="py-2 px-3 font-bold text-white">Stage 1: Single-Day Subsample</td>
-                      <td className="py-2 px-3 text-right text-space-300">22,455</td>
-                      <td className="py-2 px-3 text-right font-bold text-accent-blue">28,911</td>
-                      <td className="py-2 px-3 text-right text-space-200">15.70 s</td>
-                      <td className="py-2 px-3 text-right text-emerald-400 font-bold">1,841.2</td>
-                      <td className="py-2 px-3 text-right text-space-300">168.4 MB</td>
-                      <td className="py-2 px-3 text-right text-space-300">~245 MB</td>
-                      <td className="py-2 px-3"><span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">VERIFIED REAL DATA</span></td>
-                    </tr>
-                    {/* Stage 2 */}
-                    <tr className="hover:bg-space-800/40">
-                      <td className="py-2 px-3 font-bold text-white">Stage 2: Multi-Day Boreal (3 Partitions)</td>
-                      <td className="py-2 px-3 text-right text-space-300">
-                        {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.observations_considered?.toLocaleString() || '4,186'}
-                      </td>
-                      <td className="py-2 px-3 text-right font-bold text-accent-blue">
-                        {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.total_pairs_generated?.toLocaleString() || '31,026'}
-                      </td>
-                      <td className="py-2 px-3 text-right text-space-200">
-                        {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.wall_clock_seconds || '52.83'} s
-                      </td>
-                      <td className="py-2 px-3 text-right text-emerald-400 font-bold">
-                        {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.throughput_pairs_per_sec || '587.3'}
-                      </td>
-                      <td className="py-2 px-3 text-right text-space-300">
-                        {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.peak_traced_memory_mb || '78.11'} MB
-                      </td>
-                      <td className="py-2 px-3 text-right text-space-300">
-                        {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.process_rss_mb || '302.54'} MB
-                      </td>
-                      <td className="py-2 px-3"><span className="px-2 py-0.5 rounded text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800">VERIFIED REAL DATA</span></td>
-                    </tr>
-                    {/* Stage 3 Projection */}
-                    <tr className="hover:bg-space-800/40 bg-space-950/40">
-                      <td className="py-2 px-3 font-bold text-space-300">Stage 3: Full 22.18M Catalog Scale</td>
-                      <td className="py-2 px-3 text-right text-space-300">22,175,341</td>
-                      <td className="py-2 px-3 text-right font-bold text-accent-blue">~18.5M (est.)</td>
-                      <td className="py-2 px-3 text-right text-space-200">~1.4 hours (est.)</td>
-                      <td className="py-2 px-3 text-right text-emerald-400 font-bold">~3,500 (projected)</td>
-                      <td className="py-2 px-3 text-right text-space-300">&lt; 350 MB (bounded)</td>
-                      <td className="py-2 px-3 text-right text-space-300">&lt; 800 MB (bounded)</td>
-                      <td className="py-2 px-3"><span className="px-2 py-0.5 rounded text-[10px] bg-blue-950 text-blue-400 border border-blue-800">LINEAR PROJECTION</span></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                headers={[
+                  'Benchmark Scale',
+                  { label: 'Observations', className: 'text-right' },
+                  { label: 'Candidate Pairs', className: 'text-right text-accent-blue' },
+                  { label: 'Wall Clock Time', className: 'text-right' },
+                  { label: 'Throughput (pairs/s)', className: 'text-right text-emerald-400' },
+                  { label: 'Traced RAM', className: 'text-right' },
+                  { label: 'Process RSS', className: 'text-right' },
+                  'Execution Status',
+                ]}
+              >
+                <tr className="hover:bg-white/[0.04] transition-colors">
+                  <td className="py-2.5 px-4 font-mono font-bold text-white">Stage 1: Single-Day Subsample</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">22,455</td>
+                  <td className="py-2.5 px-4 text-right font-mono font-bold text-accent-blue">28,911</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-200">15.70 s</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-emerald-400 font-bold">1,841.2</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">168.4 MB</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">~245 MB</td>
+                  <td className="py-2.5 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800">VERIFIED REAL DATA</span></td>
+                </tr>
+                <tr className="hover:bg-white/[0.04] transition-colors">
+                  <td className="py-2.5 px-4 font-mono font-bold text-white">Stage 2: Multi-Day Boreal (3 Partitions)</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">
+                    {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.observations_considered?.toLocaleString() || '4,186'}
+                  </td>
+                  <td className="py-2.5 px-4 text-right font-mono font-bold text-accent-blue">
+                    {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.total_pairs_generated?.toLocaleString() || '31,026'}
+                  </td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-200">
+                    {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.wall_clock_seconds || '52.83'} s
+                  </td>
+                  <td className="py-2.5 px-4 text-right font-mono text-emerald-400 font-bold">
+                    {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.throughput_pairs_per_sec || '587.3'}
+                  </td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">
+                    {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.peak_traced_memory_mb || '78.11'} MB
+                  </td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">
+                    {fullScaleBenchmarks?.benchmarks?.stage_2_multiday_boreal?.process_rss_mb || '302.54'} MB
+                  </td>
+                  <td className="py-2.5 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-400 border border-emerald-800">VERIFIED REAL DATA</span></td>
+                </tr>
+                <tr className="hover:bg-white/[0.04] transition-colors bg-space-950/40">
+                  <td className="py-2.5 px-4 font-mono font-bold text-space-300">Stage 3: Full 22.18M Catalog Scale</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">22,175,341</td>
+                  <td className="py-2.5 px-4 text-right font-mono font-bold text-accent-blue">~18.5M (est.)</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-200">~1.4 hours (est.)</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-emerald-400 font-bold">~3,500 (projected)</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">&lt; 350 MB (bounded)</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">&lt; 800 MB (bounded)</td>
+                  <td className="py-2.5 px-4"><span className="px-2 py-0.5 rounded text-[10px] font-mono bg-blue-950 text-blue-400 border border-blue-800">LINEAR PROJECTION</span></td>
+                </tr>
+              </DataTable>
 
               {/* Scientific Honesty Notice */}
               <div className="p-3.5 rounded-lg bg-space-950 border border-space-800 text-xs text-space-300">
@@ -1154,57 +1127,52 @@ export default function MatchingView() {
               <div className="h-72 w-full pt-2">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={evaluation}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_THEME.grid.stroke} />
                     <XAxis 
                       dataKey={(item) => `${item.spatial_radius_km}km / ${item.temporal_window_minutes}m`}
-                      stroke="#64748b" 
-                      tick={{ fontSize: 10 }}
+                      stroke={CHART_THEME.axis.stroke} 
+                      tick={{ fill: CHART_THEME.tick.fill, fontSize: 10 }}
                     />
-                    <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+                    <YAxis stroke={CHART_THEME.axis.stroke} tick={{ fill: CHART_THEME.tick.fill, fontSize: 11 }} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', fontSize: '12px' }}
+                      content={<GlassTooltip />}
                       formatter={(val, name) => [val.toLocaleString(), name === 'candidate_association_count' ? 'Candidate Associations' : 'Matched MODIS']}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                    <Bar dataKey="candidate_association_count" name="Candidate Associations" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="unique_modis_matched" name="Matched MODIS Obs" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="candidate_association_count" name="Candidate Associations" fill={SENSOR_COLORS.modis} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="unique_modis_matched" name="Matched MODIS Obs" fill={SENSOR_COLORS.matched} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
 
               {/* Tabular Sensitivity Breakdown */}
-              <div className="overflow-x-auto rounded-lg border border-space-800">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead className="bg-space-950 text-space-400 border-b border-space-800">
-                    <tr>
-                      <th className="py-2.5 px-3">Radius</th>
-                      <th className="py-2.5 px-3">Window</th>
-                      <th className="py-2.5 px-3 text-right">Candidates</th>
-                      <th className="py-2.5 px-3 text-right text-modis">MODIS Match</th>
-                      <th className="py-2.5 px-3 text-right text-viirs">VIIRS Match</th>
-                      <th className="py-2.5 px-3 text-right text-amber-400">Ambiguity %</th>
-                      <th className="py-2.5 px-3 text-right">Mean Dist</th>
-                      <th className="py-2.5 px-3 text-right">Mean &Delta;t</th>
-                      <th className="py-2.5 px-3 text-right">Candidates/MODIS</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-space-850 bg-space-900/50">
-                    {evaluation.map((row, idx) => (
-                      <tr key={idx} className="hover:bg-space-800/40">
-                        <td className="py-2 px-3 font-bold text-white">{row.spatial_radius_km} km</td>
-                        <td className="py-2 px-3 text-space-300">{row.temporal_window_minutes} min</td>
-                        <td className="py-2 px-3 text-right font-bold text-accent-blue">{row.candidate_association_count?.toLocaleString()}</td>
-                        <td className="py-2 px-3 text-right text-modis">{row.unique_modis_matched?.toLocaleString()} ({row.modis_match_rate_pct}%)</td>
-                        <td className="py-2 px-3 text-right text-viirs">{row.unique_viirs_matched?.toLocaleString()} ({row.viirs_match_rate_pct}%)</td>
-                        <td className="py-2 px-3 text-right text-amber-400 font-semibold">{row.modis_ambiguity_pct}%</td>
-                        <td className="py-2 px-3 text-right text-space-300">{row.mean_distance_km} km</td>
-                        <td className="py-2 px-3 text-right text-space-300">{row.mean_time_diff_min} min</td>
-                        <td className="py-2 px-3 text-right font-bold text-white">{row.candidates_per_matched_modis}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                headers={[
+                  'Radius',
+                  'Window',
+                  { label: 'Candidates', className: 'text-right' },
+                  { label: 'MODIS Match', className: 'text-right text-modis' },
+                  { label: 'VIIRS Match', className: 'text-right text-viirs' },
+                  { label: 'Ambiguity %', className: 'text-right text-amber-400' },
+                  { label: 'Mean Dist', className: 'text-right' },
+                  { label: 'Mean Δt', className: 'text-right' },
+                  { label: 'Candidates/MODIS', className: 'text-right' },
+                ]}
+              >
+                {evaluation.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-white/[0.04] transition-colors">
+                    <td className="py-2.5 px-4 font-mono font-bold text-white">{row.spatial_radius_km} km</td>
+                    <td className="py-2.5 px-4 font-mono text-space-300">{row.temporal_window_minutes} min</td>
+                    <td className="py-2.5 px-4 text-right font-mono font-bold text-accent-blue">{row.candidate_association_count?.toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-modis">{row.unique_modis_matched?.toLocaleString()} ({row.modis_match_rate_pct}%)</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-viirs">{row.unique_viirs_matched?.toLocaleString()} ({row.viirs_match_rate_pct}%)</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-amber-400 font-semibold">{row.modis_ambiguity_pct}%</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-space-300">{row.mean_distance_km} km</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-space-300">{row.mean_time_diff_min} min</td>
+                    <td className="py-2.5 px-4 text-right font-mono font-bold text-white">{row.candidates_per_matched_modis}</td>
+                  </tr>
+                ))}
+              </DataTable>
             </div>
           </Card>
         </div>
@@ -1261,49 +1229,44 @@ export default function MatchingView() {
             </div>
 
             {/* Paginated Association Table */}
-            <div className="overflow-x-auto rounded-lg border border-space-800">
-              <table className="w-full text-left text-xs font-mono">
-                <thead className="bg-space-950 text-space-400 border-b border-space-800">
-                  <tr>
-                    <th className="py-2.5 px-3">Association ID</th>
-                    <th className="py-2.5 px-3 text-modis">MODIS Obs</th>
-                    <th className="py-2.5 px-3 text-viirs">VIIRS Obs</th>
-                    <th className="py-2.5 px-3 text-right">Distance</th>
-                    <th className="py-2.5 px-3 text-right">&Delta;t</th>
-                    <th className="py-2.5 px-3 text-right text-accent-blue">Score</th>
-                    <th className="py-2.5 px-3 text-center">Multiplicity</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-space-850 bg-space-900/40">
-                  {associations.map((a) => (
-                    <tr
-                      key={a.association_id}
-                      onClick={() => setSelectedAssoc(a)}
-                      className={`cursor-pointer transition-colors ${
-                        selectedAssoc?.association_id === a.association_id ? 'bg-space-800' : 'hover:bg-space-850/60'
-                      }`}
-                    >
-                      <td className="py-2 px-3 font-semibold text-white">{a.association_id}</td>
-                      <td className="py-2 px-3 text-modis">{a.modis_observation_id} ({a.modis_frp} MW)</td>
-                      <td className="py-2 px-3 text-viirs">{a.viirs_observation_id} ({a.viirs_frp} MW)</td>
-                      <td className="py-2 px-3 text-right">{a.distance_km} km</td>
-                      <td className="py-2 px-3 text-right">{a.time_diff_minutes} min</td>
-                      <td className="py-2 px-3 text-right font-bold text-accent-blue">{a.heuristic_score}</td>
-                      <td className="py-2 px-3 text-center">{getMultiplicityBadge(a.multiplicity_type)}</td>
-                      <td className="py-2 px-3 text-center">{getClassificationBadge(a.classification)}</td>
-                    </tr>
-                  ))}
-                  {associations.length === 0 && (
-                    <tr>
-                      <td colSpan={8} className="py-6 text-center text-space-400 font-sans">
-                        No candidate associations found matching current filter parameters.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              headers={[
+                'Association ID',
+                { label: 'MODIS Obs', className: 'text-modis' },
+                { label: 'VIIRS Obs', className: 'text-viirs' },
+                { label: 'Distance', className: 'text-right' },
+                { label: 'Δt', className: 'text-right' },
+                { label: 'Score', className: 'text-right text-accent-blue' },
+                { label: 'Multiplicity', className: 'text-center' },
+                { label: 'Status', className: 'text-center' },
+              ]}
+            >
+              {associations.map((a) => (
+                <tr
+                  key={a.association_id}
+                  onClick={() => setSelectedAssoc(a)}
+                  className={`cursor-pointer transition-colors ${
+                    selectedAssoc?.association_id === a.association_id ? 'bg-space-800' : 'hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <td className="py-2.5 px-4 font-mono font-semibold text-white">{a.association_id}</td>
+                  <td className="py-2.5 px-4 font-mono text-modis">{a.modis_observation_id} ({a.modis_frp} MW)</td>
+                  <td className="py-2.5 px-4 font-mono text-viirs">{a.viirs_observation_id} ({a.viirs_frp} MW)</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">{a.distance_km} km</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-space-300">{a.time_diff_minutes} min</td>
+                  <td className="py-2.5 px-4 text-right font-mono font-bold text-accent-blue">{a.heuristic_score}</td>
+                  <td className="py-2.5 px-4 text-center">{getMultiplicityBadge(a.multiplicity_type)}</td>
+                  <td className="py-2.5 px-4 text-center">{getClassificationBadge(a.classification)}</td>
+                </tr>
+              ))}
+              {associations.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-space-400 font-sans">
+                    No candidate associations found matching current filter parameters.
+                  </td>
+                </tr>
+              )}
+            </DataTable>
 
             {/* Pagination Controls */}
             <div className="flex items-center justify-between text-xs font-mono pt-2">
@@ -1311,20 +1274,22 @@ export default function MatchingView() {
                 Page {currentPage} of {Math.max(1, Math.ceil(totalAssocs / pageSize))} ({totalAssocs?.toLocaleString()} total records)
               </span>
               <div className="flex items-center gap-2">
-                <button
+                <ClayButton
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-3 py-1 rounded bg-space-800 hover:bg-space-750 disabled:opacity-40 text-space-200"
+                  variant="ghost"
+                  size="sm"
                 >
                   Previous
-                </button>
-                <button
+                </ClayButton>
+                <ClayButton
                   onClick={() => setCurrentPage((p) => p + 1)}
                   disabled={currentPage * pageSize >= totalAssocs}
-                  className="px-3 py-1 rounded bg-space-800 hover:bg-space-750 disabled:opacity-40 text-space-200"
+                  variant="ghost"
+                  size="sm"
                 >
                   Next
-                </button>
+                </ClayButton>
               </div>
             </div>
           </div>
