@@ -34,6 +34,7 @@ class Settings(BaseSettings):
         "https://firelens.onrender.com",
         "https://firelens-frontend.onrender.com",
         "https://firelens.vercel.app",
+        "https://nasa-26-one.vercel.app",
     ]
     CORS_ALLOW_CREDENTIALS: bool = True
     CORS_ALLOW_METHODS: List[str] = ["*"]

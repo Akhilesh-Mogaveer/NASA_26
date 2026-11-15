@@ -1,9 +1,20 @@
 import axios from 'axios';
 
+// Default deployed Render backend URL fallback for production builds when environment variables are unset
+const DEFAULT_RENDER_BACKEND_URL = 'https://firelens-backend.onrender.com';
+
 // Get API base URL from Vite environment variables.
-// Priority: VITE_API_BASE_URL (standard production) -> VITE_API_URL -> empty fallback (relative path / Vite dev proxy).
+// Priority order:
+// 1. Explicit VITE_API_BASE_URL (configured in Vercel project environment settings)
+// 2. VITE_API_URL
+// 3. In production mode (e.g. deployed on Vercel), fall back to DEFAULT_RENDER_BACKEND_URL
+// 4. In local development mode, fall back to '' (empty string) to route through Vite dev server proxy
+const rawBaseUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.PROD ? DEFAULT_RENDER_BACKEND_URL : '');
+
 // Strip any trailing slashes to guarantee clean, deterministic endpoint path concatenation.
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || '';
 const API_BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 export const apiClient = axios.create({
