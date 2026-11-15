@@ -42,7 +42,8 @@ import SubTabs from '../common/SubTabs';
 import DataTable from '../common/DataTable';
 import ClayButton from '../common/ClayButton';
 import ChangeMapView from '../common/ChangeMapView';
-import { SENSOR_COLORS, EVENT_COLORS, MAP_THEME } from '../../theme/tokens';
+import MapBasemapToggle from '../common/MapBasemapToggle';
+import { SENSOR_COLORS, EVENT_COLORS, MAP_THEME, BASEMAPS } from '../../theme/tokens';
 import { 
   getClusteringSummary, 
   getClusters, 
@@ -63,6 +64,7 @@ import {
 export default function EventExplorerView() {
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState('overview'); // 'overview' | 'map' | 'clusters' | 'relationships' | 'runner'
+  const [activeBasemap, setActiveBasemap] = useState('dark');
   const [clusteringSummary, setClusteringSummary] = useState(null);
   const [associationSummary, setAssociationSummary] = useState(null);
   const [error, setError] = useState(null);
@@ -622,6 +624,7 @@ export default function EventExplorerView() {
 
             {/* Leaflet Map Canvas */}
             <div className="h-[550px] w-full rounded-xl overflow-hidden border border-space-800 relative">
+              <MapBasemapToggle activeBasemap={activeBasemap} onChange={setActiveBasemap} />
               <MapContainer
                 center={mapCenter}
                 zoom={mapZoom}
@@ -630,10 +633,19 @@ export default function EventExplorerView() {
               >
                 <ChangeMapView center={mapCenter} zoom={mapZoom} />
                 <TileLayer
-                  attribution={MAP_THEME.attribution}
-                  url={MAP_THEME.tileUrl}
-                  maxZoom={MAP_THEME.maxZoom || 16}
+                  key={activeBasemap}
+                  attribution={BASEMAPS[activeBasemap].attribution}
+                  url={BASEMAPS[activeBasemap].tileUrl}
+                  maxZoom={BASEMAPS[activeBasemap].maxZoom}
                 />
+                {activeBasemap === 'satellite' && BASEMAPS.satellite.referenceUrl && (
+                  <TileLayer
+                    key="satellite-reference"
+                    url={BASEMAPS.satellite.referenceUrl}
+                    maxZoom={BASEMAPS.satellite.maxZoom}
+                    opacity={0.8}
+                  />
+                )}
 
                 {/* Relationship Vector Lines */}
                 {filteredMapLines.map((line) => {

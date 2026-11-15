@@ -94,16 +94,35 @@ export const CANVAS_THEME = {
   borderGlass: 'rgba(255, 255, 255, 0.10)',
 };
 
-// Leaflet Map Theme Tokens (Esri Dark Gray Canvas by default; optional CARTO key via VITE_CARTO_API_KEY)
+// Leaflet Map Theme Tokens (Esri Dark Gray Canvas & Satellite Imagery; optional CARTO key via VITE_CARTO_API_KEY)
 const cartoKey = typeof import.meta !== 'undefined' && import.meta.env?.VITE_CARTO_API_KEY;
+
+export const BASEMAPS = {
+  dark: {
+    id: 'dark',
+    name: 'Dark Canvas',
+    tileUrl: cartoKey 
+      ? `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`
+      : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    attribution: cartoKey
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+      : 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ',
+    maxZoom: 16,
+  },
+  satellite: {
+    id: 'satellite',
+    name: 'Satellite View',
+    tileUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    referenceUrl: 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    maxZoom: 18,
+  },
+};
 
 export const MAP_THEME = {
   backgroundColor: '#070b12',
-  tileUrl: cartoKey 
-    ? `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`
-    : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-  attribution: cartoKey
-    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    : 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ',
-  maxZoom: 16,
+  tileUrl: BASEMAPS.dark.tileUrl,
+  attribution: BASEMAPS.dark.attribution,
+  maxZoom: BASEMAPS.dark.maxZoom,
+  basemaps: BASEMAPS,
 };

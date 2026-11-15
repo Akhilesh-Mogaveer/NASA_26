@@ -12,7 +12,8 @@ import ClayButton from '../common/ClayButton';
 import DataTable from '../common/DataTable';
 import LoadingState from '../common/LoadingState';
 import ChangeMapView from '../common/ChangeMapView';
-import { DENSITY_RAMP, MAP_THEME } from '../../theme/tokens';
+import MapBasemapToggle from '../common/MapBasemapToggle';
+import { DENSITY_RAMP, MAP_THEME, BASEMAPS } from '../../theme/tokens';
 import { getGridDensity, getGeographicalAnalytics } from '../../api/client';
 
 export default function FireMapView({ setActiveTab }) {
@@ -20,6 +21,7 @@ export default function FireMapView({ setActiveTab }) {
   const [topHotspots, setTopHotspots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeBasemap, setActiveBasemap] = useState('dark');
 
   // Filters
   const [minCount, setMinCount] = useState(500);
@@ -224,6 +226,7 @@ export default function FireMapView({ setActiveTab }) {
         {/* Live Leaflet Map Canvas */}
         <div className="lg:col-span-3 space-y-4">
           <div className="relative rounded-2xl bg-space-900 border border-white/10 h-[520px] overflow-hidden shadow-2xl">
+            <MapBasemapToggle activeBasemap={activeBasemap} onChange={setActiveBasemap} />
             {loading && (
               <div className="absolute inset-0 bg-space-950/70 z-20 flex items-center justify-center text-xs text-space-300 space-x-2">
                 <Compass className="w-5 h-5 animate-spin text-modis" />
@@ -239,12 +242,21 @@ export default function FireMapView({ setActiveTab }) {
             >
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
 
-              {/* Dark Basemap */}
+              {/* Dynamic Basemap Layer (Dark Canvas or Satellite Imagery) */}
               <TileLayer
-                attribution={MAP_THEME.attribution}
-                url={MAP_THEME.tileUrl}
-                maxZoom={MAP_THEME.maxZoom || 16}
+                key={activeBasemap}
+                attribution={BASEMAPS[activeBasemap].attribution}
+                url={BASEMAPS[activeBasemap].tileUrl}
+                maxZoom={BASEMAPS[activeBasemap].maxZoom}
               />
+              {activeBasemap === 'satellite' && BASEMAPS.satellite.referenceUrl && (
+                <TileLayer
+                  key="satellite-reference"
+                  url={BASEMAPS.satellite.referenceUrl}
+                  maxZoom={BASEMAPS.satellite.maxZoom}
+                  opacity={0.8}
+                />
+              )}
 
               {/* Render 2-Degree Grid Circles */}
               {gridCells.map((cell, idx) => {

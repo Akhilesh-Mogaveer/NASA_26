@@ -44,7 +44,8 @@ import DataTable from '../common/DataTable';
 import GlassTooltip from '../common/GlassTooltip';
 import ClayButton from '../common/ClayButton';
 import ChangeMapView from '../common/ChangeMapView';
-import { SENSOR_COLORS, CHART_THEME, MAP_THEME } from '../../theme/tokens';
+import MapBasemapToggle from '../common/MapBasemapToggle';
+import { SENSOR_COLORS, CHART_THEME, MAP_THEME, BASEMAPS } from '../../theme/tokens';
 import { 
   getMatchingSummary, 
   getMatchingEvaluation, 
@@ -71,6 +72,7 @@ export default function MatchingView() {
 
   // Active view tab inside module: 'overview' | 'map' | 'full_scale' | 'sensitivity' | 'associations'
   const [subTab, setSubTab] = useState('overview');
+  const [activeBasemap, setActiveBasemap] = useState('dark');
 
   // Filters & Pagination for Association Explorer
   const [classificationFilter, setClassificationFilter] = useState('ALL');
@@ -656,6 +658,7 @@ export default function MatchingView() {
 
                 {/* Leaflet Map */}
                 <div className="h-[520px] w-full rounded-xl overflow-hidden border border-space-800 relative">
+                  <MapBasemapToggle activeBasemap={activeBasemap} onChange={setActiveBasemap} />
                   <MapContainer
                     center={mapCenter}
                     zoom={mapZoom}
@@ -664,10 +667,19 @@ export default function MatchingView() {
                   >
                     <ChangeMapView center={mapCenter} zoom={mapZoom} />
                     <TileLayer
-                      attribution={MAP_THEME.attribution}
-                      url={MAP_THEME.tileUrl}
-                      maxZoom={MAP_THEME.maxZoom || 16}
+                      key={activeBasemap}
+                      attribution={BASEMAPS[activeBasemap].attribution}
+                      url={BASEMAPS[activeBasemap].tileUrl}
+                      maxZoom={BASEMAPS[activeBasemap].maxZoom}
                     />
+                    {activeBasemap === 'satellite' && BASEMAPS.satellite.referenceUrl && (
+                      <TileLayer
+                        key="satellite-reference"
+                        url={BASEMAPS.satellite.referenceUrl}
+                        maxZoom={BASEMAPS.satellite.maxZoom}
+                        opacity={0.8}
+                      />
+                    )}
 
                     {/* Candidate Proximity Vector Lines */}
                     {showLines && mapLines.map((line) => {

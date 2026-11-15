@@ -46,7 +46,8 @@ import DataTable from '../components/common/DataTable';
 import GlassTooltip from '../components/common/GlassTooltip';
 import ClayButton from '../components/common/ClayButton';
 import ChangeMapView from '../components/common/ChangeMapView';
-import { SENSOR_COLORS, EVENT_COLORS, CHART_THEME, MAP_THEME } from '../theme/tokens';
+import MapBasemapToggle from '../components/common/MapBasemapToggle';
+import { SENSOR_COLORS, EVENT_COLORS, CHART_THEME, MAP_THEME, BASEMAPS } from '../theme/tokens';
 import { 
   getEvolutionSummary,
   getEvolutionTracks,
@@ -64,6 +65,7 @@ import {
 export default function EventEvolutionView() {
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState('overview'); // 'overview' | 'map' | 'timeline' | 'lineage' | 'runner'
+  const [activeBasemap, setActiveBasemap] = useState('dark');
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
 
@@ -603,6 +605,7 @@ export default function EventEvolutionView() {
 
           {/* Map Container */}
           <Card className="bg-space-900 border-space-800 p-0 overflow-hidden relative" style={{ height: '620px' }}>
+            <MapBasemapToggle activeBasemap={activeBasemap} onChange={setActiveBasemap} />
             <MapContainer
               center={mapCenter}
               zoom={mapZoom}
@@ -610,10 +613,19 @@ export default function EventEvolutionView() {
             >
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
               <TileLayer
-                attribution={MAP_THEME.attribution}
-                url={MAP_THEME.tileUrl}
-                maxZoom={MAP_THEME.maxZoom || 16}
+                key={activeBasemap}
+                attribution={BASEMAPS[activeBasemap].attribution}
+                url={BASEMAPS[activeBasemap].tileUrl}
+                maxZoom={BASEMAPS[activeBasemap].maxZoom}
               />
+              {activeBasemap === 'satellite' && BASEMAPS.satellite.referenceUrl && (
+                <TileLayer
+                  key="satellite-reference"
+                  url={BASEMAPS.satellite.referenceUrl}
+                  maxZoom={BASEMAPS.satellite.maxZoom}
+                  opacity={0.8}
+                />
+              )}
 
               {/* Directed Temporal Vectors (Edges) */}
               {mapEdges.map((edge) => {
