@@ -1,0 +1,47 @@
+{
+  "experiment_name": "regional_boreal_baseline",
+  "status": "completed",
+  "executed_at": "2026-11-15T04:10:59Z",
+  "parameters": {
+    "spatial_radius_km": 2.0,
+    "temporal_window_minutes": 60.0,
+    "min_samples": 3
+  },
+  "bounds": {
+    "lat_min": 54.0,
+    "lat_max": 58.0,
+    "lon_min": -106.0,
+    "lon_max": -102.0
+  },
+  "date_range": [
+    "2025-08-01",
+    "2025-08-02"
+  ],
+  "benchmarks": {
+    "runtime_seconds": 53.88,
+    "peak_traced_memory_mb": 40.18,
+    "process_rss_mb": 247.32,
+    "total_observations_processed": 22455,
+    "throughput_obs_per_sec": 416.8
+  },
+  "modis": {
+    "input_observations": 3116,
+    "cluster_count": 310,
+    "clustered_observations": 2191,
+    "noise_observations": 925,
+    "clustering_rate_pct": 70.31,
+    "noise_rate_pct": 29.69,
+    "avg_observations_per_cluster": 7.07,
+    "total_snapshot_frp_mw": 244569.0
+  },
+  "viirs": {
+    "input_observations": 19339,
+    "cluster_count": 670,
+    "clustered_observations": 18798,
+    "noise_observations": 541,
+    "clustering_rate_pct": 97.2,
+    "noise_rate_pct": 2.8,
+    "avg_observations_per_cluster": 28.06,
+    "total_snapshot_frp_mw": 303706.98
+  }
+}

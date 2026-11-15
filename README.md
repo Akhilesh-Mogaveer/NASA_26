@@ -423,7 +423,68 @@ Executed on authentic NASA FIRMS observations:
 
 ---
 
-## 12. Scientific Considerations
+## 12. Phase 5: Fire Event Clustering & Cross-Sensor Association
+
+Phase 5 transitions FireLens from individual hotspot point associations to coherent spatial-temporal fire event intelligence:
+
+### 12.1 Phase 5.1 Independent Fire Event Clustering
+- **Independent Sensor DBSCAN:** MODIS and VIIRS are clustered strictly independently using a dual spatial-temporal neighborhood rule:
+  $$d_{\text{haversine}}(p_i, p_j) \le R_{\text{spatial}} \quad \text{AND} \quad |t_i - t_j| \le \Delta t_{\text{temporal}}$$
+- **Spherical Geometry & Antimeridian Safety:** Earth radius $R = 6371.0088\text{ km}$, coordinate radians, and exact 3D Cartesian spherical centroid averaging ($x=\cos\phi\cos\lambda, y=\cos\phi\sin\lambda, z=\sin\phi$) to prevent coordinate distortion near the antimeridian (-180° / +180°) and high polar latitudes.
+- **Explicit Point Roles:** Core points ($|\mathcal{N}| \ge N_{\text{min}}$), border points, and noise points. Noise is explicitly preserved with `is_noise=True` and cluster ID `NOISE`, never silently discarded.
+- **Partition Reconciliation:** Cross-boundary clusters are unified across partition overlap halos using Disjoint Set Union (Union-Find) to ensure 0 duplicate observation memberships.
+- **Scientific Grounding:** Clusters are empirical computational groupings, NOT confirmed physical fire perimeters. Summed FRP is snapshot power in MW, NOT Fire Radiative Energy in MJ.
+
+### 12.2 Phase 5.2 Cross-Sensor Event Association
+- **Evidence-Based Association:** Reuses Phase 4 candidate observation associations without rerunning global all-pairs matching.
+- **Bipartite Graph Topology:** Models relationships between MODIS and VIIRS clusters as a bipartite graph, evaluating degree connectivity:
+  - `1:1`: Direct isolated event pair.
+  - `1:N`: One coarse MODIS cluster associated with multiple fine VIIRS clusters.
+  - `N:1`: Multiple MODIS clusters associated with one large VIIRS cluster.
+  - `M:N`: Multi-cluster complex in dense high-energy wildfire sectors.
+- **Topological De-Fragmentation Finding:** While raw observations were dominated by M:N multi-pixel complexes (92.6%) due to resolution asymmetry, **57.0% of cluster-level candidate relationships resolve into direct 1:1 event associations** (90 of 158 relationships).
+- **Composite Heuristic Score:** Multi-component transparent formula ($0.35\text{ coverage} + 0.25\text{ spatial} + 0.20\text{ temporal} + 0.20\text{ obs\_score}$). Empirical ranking metric, NOT a calibrated probability.
+
+### 12.3 Real-Data Benchmark Results (Saskatchewan Boreal Benchmark)
+- **Observations Clustered:** 22,455 records (3,116 MODIS, 19,339 VIIRS).
+- **MODIS Clusters:** 310 clusters (2,191 clustered obs [70.31%], 925 noise obs [29.69%], total snapshot FRP: 244,569.0 MW).
+- **VIIRS Clusters:** 670 clusters (18,798 clustered obs [97.20%], 541 noise obs [2.80%], total snapshot FRP: 303,706.98 MW).
+- **Cross-Sensor Candidate Relationships:** 158 relationships linking 142 MODIS clusters (45.81%) and 134 VIIRS clusters (20.00%).
+- **Multiplicity Breakdown:** `1:1`: 90 (57.0%); `1:N`: 26 (16.5%); `N:1`: 36 (22.8%); `M:N`: 6 (3.8%).
+- **Connected Components:** 118 components (`1:1_pair`: 90, `1:N_star`: 10, `N:1_star`: 13, `M:N_complex`: 5).
+- **Benchmarks:** Runtime: 53.88 s; Throughput: 416.8 obs/sec; Peak traced RAM: 40.18 MB; Process RSS: 247.32 MB.
+
+### 12.4 Event Artifacts in `data/events/`
+- `modis_clusters.parquet` (30 KB) — All 310 MODIS event clusters with centroids, spread, duration, and FRP.
+- `viirs_clusters.parquet` (60 KB) — All 670 VIIRS event clusters.
+- `modis_cluster_membership.parquet` (53 KB) — Observation-level cluster assignments.
+- `viirs_cluster_membership.parquet` (449 KB) — Observation-level cluster assignments.
+- `cluster_noise_observations.parquet` (39 KB) — Preserved noise observations.
+- `cross_sensor_event_associations.parquet` (27 KB) — All 158 cross-sensor candidate relationships.
+- `event_relationship_components.parquet` (7 KB) — Connected components in the bipartite graph.
+- `clustering_summary.json` (1.2 KB) — Cluster metrics, parameters, and benchmarks.
+- `event_association_summary.json` (1.0 KB) — Multiplicity and classification breakdown.
+- `clustering_experiments.parquet` (2.2 KB) — Historical experiment log.
+- `event_processing_manifest.json` (0.2 KB) — Processing state manifest.
+
+### 12.5 Event Intelligence API Endpoints
+- `POST /api/events/clustering/run` — Asynchronous spatial-temporal clustering job.
+- `GET /api/events/clustering/status` — Live clustering job execution status.
+- `GET /api/events/clustering/summary` — Latest clustering metrics and benchmarks.
+- `GET /api/events/clustering/clusters` — Paginated clusters with sensor and bounding-box filters.
+- `GET /api/events/clustering/{cluster_id}` — Single cluster metadata and spatial summaries.
+- `GET /api/events/clustering/{cluster_id}/observations` — Constituent hotspot observations.
+- `POST /api/events/association/run` — Asynchronous cross-sensor event association job.
+- `GET /api/events/association/status` — Live association job status.
+- `GET /api/events/association/summary` — Event association summary and topology metrics.
+- `GET /api/events/association/relationships` — Paginated cluster relationships with multiplicity filters.
+- `GET /api/events/association/{relationship_id}` — Relationship evidence and coverage detail.
+- `GET /api/events/map/clusters` — Cluster centroid markers for interactive Leaflet display.
+- `GET /api/events/map/relationships` — Cross-sensor relationship vectors for map display.
+
+---
+
+## 13. Scientific Considerations
 
 FireLens follows these principles:
 

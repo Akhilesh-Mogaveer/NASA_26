@@ -3,6 +3,7 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import OverviewView from './components/modules/OverviewView';
 import MatchingView from './components/modules/MatchingView';
+import EventExplorerView from './components/modules/EventExplorerView';
 import FireMapView from './components/modules/FireMapView';
 import ComparisonView from './components/modules/ComparisonView';
 import ActivityView from './components/modules/ActivityView';
@@ -75,6 +76,7 @@ export default function App() {
           />
         )}
         {activeTab === 'matching' && <MatchingView />}
+        {activeTab === 'events' && <EventExplorerView />}
         {activeTab === 'map' && <FireMapView setActiveTab={setActiveTab} />}
         {activeTab === 'comparison' && <ComparisonView />}
         {activeTab === 'activity' && <ActivityView />}

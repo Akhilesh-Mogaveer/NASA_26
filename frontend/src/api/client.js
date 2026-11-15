@@ -406,4 +406,205 @@ export async function getFullScaleBenchmarks() {
   }
 }
 
+/**
+ * =========================================================================
+ * Phase 5.1 & 5.2 Event Intelligence API Client Methods
+ * =========================================================================
+ */
+
+/**
+ * Trigger independent spatial-temporal clustering job
+ */
+export async function runClustering(params = {}) {
+  try {
+    const response = await apiClient.post('/api/events/clustering/run', params);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to trigger clustering',
+    };
+  }
+}
+
+/**
+ * Get clustering job execution status
+ */
+export async function getClusteringStatus() {
+  try {
+    const response = await apiClient.get('/api/events/clustering/status');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch clustering status',
+    };
+  }
+}
+
+/**
+ * Get clustering summary metrics and benchmarks
+ */
+export async function getClusteringSummary() {
+  try {
+    const response = await apiClient.get('/api/events/clustering/summary');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch clustering summary',
+    };
+  }
+}
+
+/**
+ * Get paginated list of clusters
+ */
+export async function getClusters(params = {}) {
+  try {
+    const response = await apiClient.get('/api/events/clustering/clusters', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch clusters',
+    };
+  }
+}
+
+/**
+ * Get single cluster detail by ID
+ */
+export async function getClusterDetail(clusterId) {
+  try {
+    const response = await apiClient.get(`/api/events/clustering/${encodeURIComponent(clusterId)}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch cluster details',
+    };
+  }
+}
+
+/**
+ * Get observations in a cluster
+ */
+export async function getClusterObservations(clusterId, params = {}) {
+  try {
+    const response = await apiClient.get(`/api/events/clustering/${encodeURIComponent(clusterId)}/observations`, { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch cluster observations',
+    };
+  }
+}
+
+/**
+ * Trigger cross-sensor event association job
+ */
+export async function runEventAssociation(params = {}) {
+  try {
+    const response = await apiClient.post('/api/events/association/run', params);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to trigger event association',
+    };
+  }
+}
+
+/**
+ * Get event association job status
+ */
+export async function getEventAssociationStatus() {
+  try {
+    const response = await apiClient.get('/api/events/association/status');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch association status',
+    };
+  }
+}
+
+/**
+ * Get event association summary metrics and topology breakdown
+ */
+export async function getEventAssociationSummary() {
+  try {
+    const response = await apiClient.get('/api/events/association/summary');
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch association summary',
+    };
+  }
+}
+
+/**
+ * Get paginated list of candidate cluster relationships
+ */
+export async function getEventRelationships(params = {}) {
+  try {
+    const response = await apiClient.get('/api/events/association/relationships', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch relationships',
+    };
+  }
+}
+
+/**
+ * Get specific event relationship detail by ID
+ */
+export async function getEventRelationshipDetail(relationshipId) {
+  try {
+    const response = await apiClient.get(`/api/events/association/${encodeURIComponent(relationshipId)}`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch relationship detail',
+    };
+  }
+}
+
+/**
+ * Get cluster centroid points for map display
+ */
+export async function getEventMapClusters(params = {}) {
+  try {
+    const response = await apiClient.get('/api/events/map/clusters', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch event map clusters',
+    };
+  }
+}
+
+/**
+ * Get relationship vector lines connecting cluster centroids for map display
+ */
+export async function getEventMapRelationships(params = {}) {
+  try {
+    const response = await apiClient.get('/api/events/map/relationships', { params });
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.detail || error.message || 'Failed to fetch event map relationships',
+    };
+  }
+}
+
 export default apiClient;

@@ -1,0 +1,38 @@
+{
+  "modis_clusters_total": 310,
+  "viirs_clusters_total": 670,
+  "modis_clusters_associated": 142,
+  "viirs_clusters_associated": 134,
+  "modis_cluster_association_rate_pct": 45.81,
+  "viirs_cluster_association_rate_pct": 20.0,
+  "total_candidate_relationships": 158,
+  "total_connected_components": 118,
+  "multiplicity_breakdown": {
+    "1:1": 90,
+    "1:N": 26,
+    "N:1": 36,
+    "M:N": 6
+  },
+  "classification_breakdown": {
+    "stronger_candidate": 30,
+    "moderate_candidate": 62,
+    "weak_candidate": 7,
+    "ambiguous_candidate": 59
+  },
+  "component_topology_breakdown": {
+    "1:1_pair": 90,
+    "1:N_star": 10,
+    "N:1_star": 13,
+    "M:N_complex": 5
+  },
+  "mean_heuristic_event_score": 0.613,
+  "mean_centroid_distance_km": 2.121,
+  "mean_supporting_pairs_per_relationship": 151.3,
+  "parameters": {
+    "spatial_radius_km": 2.0,
+    "temporal_window_minutes": 60.0,
+    "min_supporting_pairs": 1,
+    "ambiguity_delta_threshold": 0.15
+  },
+  "created_at": "2026-11-15T04:11:00.080085Z"
+}

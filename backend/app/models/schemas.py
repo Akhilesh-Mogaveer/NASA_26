@@ -502,4 +502,192 @@ class FullScaleBenchmarksResponse(BaseModel):
     methodology_notes: List[str]
 
 
+# =============================================================================
+# Phase 5.1 & Phase 5.2: Event Clustering & Cross-Sensor Association Schemas
+# =============================================================================
+
+class ClusteringRunRequest(BaseModel):
+    """Request payload to initiate spatial-temporal clustering."""
+    spatial_radius_km: float = Field(2.0, ge=0.1, le=20.0, description="Spatial search radius in km")
+    temporal_window_minutes: float = Field(60.0, ge=5.0, le=720.0, description="Temporal window in minutes")
+    min_samples: int = Field(3, ge=1, le=50, description="Minimum observations to form a core point")
+    bounds: Optional[Dict[str, float]] = Field(None, description="Bounding coordinates {lat_min, lat_max, lon_min, lon_max}")
+    date_range: Optional[List[str]] = Field(None, description="[start_date, end_date] in YYYY-MM-DD")
+    experiment_name: str = Field("regional_boreal_baseline", description="Unique experiment label")
+
+
+class ClusteringJobStatusResponse(BaseModel):
+    """Status of background clustering job."""
+    job_id: Optional[str] = None
+    status: str
+    progress_percent: float = 0.0
+    message: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    error: Optional[str] = None
+
+
+class ClusterItem(BaseModel):
+    """Summary of a spatial-temporal fire event cluster."""
+    cluster_id: str
+    sensor: str
+    observation_count: int
+    core_count: int
+    border_count: int
+    centroid_latitude: float
+    centroid_longitude: float
+    min_latitude: float
+    max_latitude: float
+    min_longitude: float
+    max_longitude: float
+    start_timestamp_utc: str
+    end_timestamp_utc: str
+    duration_minutes: float
+    mean_spatial_spread_km: float
+    max_spatial_spread_km: float
+    sum_frp_mw: float
+    mean_frp_mw: float
+    max_frp_mw: float
+    primary_satellite: str
+    spatial_radius_km: Optional[float] = None
+    temporal_window_minutes: Optional[float] = None
+    min_samples: Optional[int] = None
+
+
+class ClustersResponse(BaseModel):
+    """Paginated list of clusters."""
+    items: List[ClusterItem]
+    total_count: int
+    limit: int
+    offset: int
+
+
+class ClusterObservationItem(BaseModel):
+    """Observation item belonging to a cluster."""
+    observation_id: str
+    cluster_id: str
+    sensor: str
+    point_role: str  # core, border, noise
+    latitude: float
+    longitude: float
+    timestamp_utc: str
+    frp: float
+    satellite: str
+
+
+class ClusterObservationsResponse(BaseModel):
+    """Observations in a cluster."""
+    cluster_id: str
+    observations: List[ClusterObservationItem]
+    total_count: int
+    limit: int
+    offset: int
+
+
+class EventAssociationRunRequest(BaseModel):
+    """Request payload to initiate cross-sensor event association."""
+    min_supporting_pairs: int = Field(1, ge=1, le=50, description="Minimum supporting candidate observation pairs")
+    ambiguity_delta_threshold: float = Field(0.15, ge=0.01, le=0.5, description="Score delta threshold for ambiguity")
+
+
+class EventAssociationJobStatusResponse(BaseModel):
+    """Status of background cross-sensor event association job."""
+    job_id: Optional[str] = None
+    status: str
+    progress_percent: float = 0.0
+    message: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    error: Optional[str] = None
+
+
+class EventRelationshipItem(BaseModel):
+    """Candidate relationship between a MODIS cluster and a VIIRS cluster."""
+    relationship_id: str
+    modis_cluster_id: str
+    viirs_cluster_id: str
+    supporting_pairs_count: int
+    unique_supporting_modis_obs: int
+    unique_supporting_viirs_obs: int
+    modis_cluster_obs_count: int
+    viirs_cluster_obs_count: int
+    modis_obs_coverage_ratio: float
+    viirs_obs_coverage_ratio: float
+    mean_distance_km: float
+    min_distance_km: float
+    max_distance_km: float
+    mean_time_diff_minutes: float
+    min_time_diff_minutes: float
+    max_time_diff_minutes: float
+    mean_heuristic_score: float
+    max_heuristic_score: float
+    centroid_distance_km: float
+    temporal_overlap_minutes: float
+    heuristic_event_score: float
+    multiplicity_type: str
+    classification: str
+    is_ambiguous: bool
+    component_id: Optional[str] = None
+    modis_centroid_lat: Optional[float] = None
+    modis_centroid_lon: Optional[float] = None
+    viirs_centroid_lat: Optional[float] = None
+    viirs_centroid_lon: Optional[float] = None
+    modis_sum_frp_mw: Optional[float] = None
+    viirs_sum_frp_mw: Optional[float] = None
+
+
+class EventRelationshipsResponse(BaseModel):
+    """Paginated list of cross-sensor event relationships."""
+    items: List[EventRelationshipItem]
+    total_count: int
+    limit: int
+    offset: int
+
+
+class EventMapClusterItem(BaseModel):
+    """Cluster representation for interactive Leaflet map rendering."""
+    cluster_id: str
+    sensor: str
+    latitude: float
+    longitude: float
+    observation_count: int
+    core_count: int
+    border_count: int
+    mean_spatial_spread_km: float
+    sum_frp_mw: float
+    duration_minutes: float
+    start_timestamp_utc: str
+    end_timestamp_utc: str
+    primary_satellite: str
+
+
+class EventMapClustersResponse(BaseModel):
+    """List of clusters for map rendering."""
+    clusters: List[EventMapClusterItem]
+    count: int
+
+
+class EventMapLineItem(BaseModel):
+    """Candidate relationship vector for interactive Leaflet map rendering."""
+    relationship_id: str
+    modis_cluster_id: str
+    viirs_cluster_id: str
+    coordinates: List[List[float]]
+    centroid_distance_km: float
+    mean_distance_km: float
+    mean_time_diff_minutes: float
+    supporting_pairs_count: int
+    heuristic_event_score: float
+    multiplicity_type: str
+    classification: str
+    is_ambiguous: bool
+
+
+class EventMapLinesResponse(BaseModel):
+    """List of relationship vectors for map rendering."""
+    lines: List[EventMapLineItem]
+    count: int
+
+
+
 

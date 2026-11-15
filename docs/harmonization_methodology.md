@@ -403,6 +403,73 @@ To scale the spatial-temporal matching engine across massive multi-million obser
    - **Stage 2 (Multi-Day Partitioned Boreal Run):** 3 daily partitions (Aug 1–3, 2025); 4,186 observations; 31,026 candidate pairs generated in 52.83s wall-clock; throughput: 587.3 pairs/s; peak traced RAM: 78.11 MB; process RSS: 302.54 MB; 0 partition failures; 0 cross-partition duplicates.
    - **Stage 3 (Full 22.18M Catalog Scale Projection):** 365 daily partitions; projected candidate pairs: ~18.5M; estimated processing time: ~1.4 hours on multi-core worker; peak memory remains strictly bounded under 800 MB RSS.
 
+### 14.10 Independent Fire Event Clustering (Phase 5.1)
+
+To transition from discrete hotspot snapshot detections to coherent spatial-temporal fire event groups, Phase 5.1 implements independent spatial-temporal clustering:
+
+1. **Independent Sensor Processing:**
+   - MODIS and VIIRS observations are clustered **strictly independently**. They are never combined into a single clustering dataset prior to cross-sensor association.
+   - Sensor-specific detection characteristics, pixel footprints (1 km vs 375 m), and orbital timing remain preserved.
+
+2. **Spatial-Temporal DBSCAN Neighborhood Formulation:**
+   - Standard DBSCAN uses a single distance metric. Combining latitude, longitude, and timestamps into an arbitrary Euclidean vector creates dimensional scaling distortions and fails on spherical Earth geometry.
+   - FireLens implements a dual spatial-temporal neighborhood rule. Two observations $p_i$ and $p_j$ are defined as density neighbors $\mathcal{N}(p_i)$ if and only if:
+     $$d_{\text{haversine}}(p_i, p_j) \le R_{\text{spatial}} \quad \text{AND} \quad |t_i - t_j| \le \Delta t_{\text{temporal}}$$
+   - Where spherical great-circle distance uses the mean Earth radius $R = 6371.0088\text{ km}$ and radian coordinates.
+   - Core points have $|\mathcal{N}(p)| \ge \text{min\_samples}$ (including self).
+   - Border points have $|\mathcal{N}(p)| < \text{min\_samples}$ but are density-reachable from a core point.
+   - Noise points are non-core, non-border points; they are preserved explicitly with `is_noise=True` and cluster ID `NOISE`, never silently discarded.
+
+3. **Antimeridian and High-Latitude Safe Centroid Calculation:**
+   - Geographic centroids are computed using 3D Cartesian spherical averaging:
+     $$x_i = \cos(\text{lat}_i) \cos(\text{lon}_i), \quad y_i = \cos(\text{lat}_i) \sin(\text{lon}_i), \quad z_i = \sin(\text{lat}_i)$$
+     $$\bar{x} = \frac{1}{N}\sum x_i, \quad \bar{y} = \frac{1}{N}\sum y_i, \quad \bar{z} = \frac{1}{N}\sum z_i$$
+     $$\text{centroid\_lat} = \arcsin\left(\frac{\bar{z}}{\sqrt{\bar{x}^2 + \bar{y}^2 + \bar{z}^2}}\right), \quad \text{centroid\_lon} = \operatorname{atan2}(\bar{y}, \bar{x})$$
+   - This formulation guarantees exact results without coordinate distortion when clusters cross the antimeridian (-180° / +180°) or occur near polar latitudes.
+
+4. **Cluster Metrics and Reporting:**
+   - `observation_count`, `core_count`, `border_count`.
+   - `spatial_spread_km`: Mean Haversine distance from constituent observations to centroid.
+   - `duration_minutes`: Temporal duration from first to last observation in cluster.
+   - `sum_frp_mw`: Sum of reported snapshot FRP values, strictly labeled in MW (instantaneous power), **NOT Fire Radiative Energy**.
+
+5. **Partition Boundary Reconciliation (Union-Find):**
+   - For partitioned streaming execution, clusters touching overlap halos are unified across partition boundaries using Disjoint Set Union (Union-Find) connected component reconciliation, guaranteeing 0 duplicate memberships and identical clustering to a global run.
+
+### 14.11 Cross-Sensor Event Association (Phase 5.2)
+
+Phase 5.2 establishes candidate associations between independently generated MODIS and VIIRS clusters using evidence from Phase 4 candidate observation associations:
+
+1. **Evidence-Based Cluster Association:**
+   - Does NOT rerun global all-pairs matching. Reuses Phase 4 candidate observation association edges.
+   - Maps each supporting observation to its assigned cluster:
+     $$\text{MODIS Obs ID} \rightarrow \text{MODIS Cluster ID}, \quad \text{VIIRS Obs ID} \rightarrow \text{VIIRS Cluster ID}$$
+   - When both observations belong to valid non-noise clusters, an evidence edge is established between the cluster pair.
+
+2. **Evidence Aggregation & Coverage:**
+   - Supporting candidate edge count.
+   - Unique supporting MODIS observations ($N_{\text{supp, modis}}$) and unique supporting VIIRS observations ($N_{\text{supp, viirs}}$).
+   - Observation coverage ratios:
+     $$\text{Coverage}_{\text{modis}} = \frac{N_{\text{supp, modis}}}{N_{\text{total, modis}}}, \quad \text{Coverage}_{\text{viirs}} = \frac{N_{\text{supp, viirs}}}{N_{\text{total, viirs}}}$$
+   - Centroid-to-centroid Haversine distance and temporal interval overlap.
+
+3. **Composite Heuristic Event Association Score:**
+   - Multi-component transparent metric in $[0.0, 1.0]$:
+     $$\text{Score} = 0.35 \times \text{Coverage}_{\text{avg}} + 0.25 \times \left(1 - \frac{d_{\text{mean}}}{R_{\text{max}}}\right) + 0.20 \times \left(1 - \frac{\Delta t_{\text{mean}}}{\Delta t_{\text{max}}}\right) + 0.20 \times \bar{s}_{\text{obs}}$$
+   - Empirical ranking score, NOT a calibrated probability of physical identity.
+
+4. **Bipartite Multiplicity & Connected Component Topology:**
+   - Evaluates cluster degrees in the bipartite graph:
+     - `1:1`: Isolated direct pair ($d(C_M)=1, d(C_V)=1$).
+     - `1:N`: One MODIS cluster associates with multiple VIIRS clusters ($d(C_M)>1, d(C_V)=1$).
+     - `N:1`: Multiple MODIS clusters associate with one VIIRS cluster ($d(C_M)=1, d(C_V)>1$).
+     - `M:N`: Multi-cluster complex ($d(C_M)>1, d(C_V)>1$).
+   - Connected components group clusters into independent complexes: `1:1_pair`, `1:N_star`, `N:1_star`, `M:N_complex`.
+
+5. **Key Empirical Finding (Event De-Fragmentation):**
+   - At the raw observation level (Phase 4), M:N multi-pixel complexes dominated (92.6%) due to resolution asymmetry.
+   - At the event cluster level (Phase 5), **57.0% of candidate relationships resolve cleanly into direct 1:1 event associations** (90 of 158 relationships), demonstrating that independent event clustering reconciles sub-pixel hotspot fragmentation into coherent event structures.
+
 ## 15. Expected Output
 
 The harmonization process produces:
