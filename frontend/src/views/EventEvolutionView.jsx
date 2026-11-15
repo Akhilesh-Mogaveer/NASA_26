@@ -610,9 +610,9 @@ export default function EventEvolutionView() {
             >
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
               <TileLayer
-                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                attribution="&copy; OpenStreetMap contributors &copy; CARTO"
-                maxZoom={18}
+                attribution={MAP_THEME.attribution}
+                url={MAP_THEME.tileUrl}
+                maxZoom={MAP_THEME.maxZoom || 16}
               />
 
               {/* Directed Temporal Vectors (Edges) */}

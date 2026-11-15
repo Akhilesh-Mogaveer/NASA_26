@@ -239,11 +239,11 @@ export default function FireMapView({ setActiveTab }) {
             >
               <ChangeMapView center={mapCenter} zoom={mapZoom} />
 
-              {/* CartoDB Dark Matter Basemap */}
+              {/* Dark Basemap */}
               <TileLayer
                 attribution={MAP_THEME.attribution}
                 url={MAP_THEME.tileUrl}
-                maxZoom={18}
+                maxZoom={MAP_THEME.maxZoom || 16}
               />
 
               {/* Render 2-Degree Grid Circles */}

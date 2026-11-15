@@ -664,8 +664,9 @@ export default function MatchingView() {
                   >
                     <ChangeMapView center={mapCenter} zoom={mapZoom} />
                     <TileLayer
-                      attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                      url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                      attribution={MAP_THEME.attribution}
+                      url={MAP_THEME.tileUrl}
+                      maxZoom={MAP_THEME.maxZoom || 16}
                     />
 
                     {/* Candidate Proximity Vector Lines */}

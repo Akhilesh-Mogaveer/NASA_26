@@ -94,9 +94,16 @@ export const CANVAS_THEME = {
   borderGlass: 'rgba(255, 255, 255, 0.10)',
 };
 
-// Leaflet Map Theme Tokens
+// Leaflet Map Theme Tokens (Esri Dark Gray Canvas by default; optional CARTO key via VITE_CARTO_API_KEY)
+const cartoKey = typeof import.meta !== 'undefined' && import.meta.env?.VITE_CARTO_API_KEY;
+
 export const MAP_THEME = {
   backgroundColor: '#070b12',
-  tileUrl: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  tileUrl: cartoKey 
+    ? `https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=${cartoKey}`
+    : 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+  attribution: cartoKey
+    ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    : 'Tiles &copy; <a href="https://www.esri.com/">Esri</a> &mdash; Esri, DeLorme, NAVTEQ',
+  maxZoom: 16,
 };
