@@ -45,6 +45,7 @@ import SubTabs from '../components/common/SubTabs';
 import DataTable from '../components/common/DataTable';
 import GlassTooltip from '../components/common/GlassTooltip';
 import ClayButton from '../components/common/ClayButton';
+import LoadingState from '../components/common/LoadingState';
 import ChangeMapView from '../components/common/ChangeMapView';
 import MapBasemapToggle from '../components/common/MapBasemapToggle';
 import { SENSOR_COLORS, EVENT_COLORS, CHART_THEME, MAP_THEME, BASEMAPS } from '../theme/tokens';
@@ -325,10 +326,26 @@ export default function EventEvolutionView() {
         </div>
       </div>
 
+      {/* Loading & Error States */}
+      {loading && (
+        <LoadingState message="Loading temporal event evolution intelligence..." />
+      )}
+
+      {error && !loading && (
+        <Card className="bg-rose-950/20 border-rose-500/30 p-6 text-center">
+          <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto mb-2" />
+          <h3 className="text-sm font-semibold text-white mb-1">Failed to Load Evolution Intelligence</h3>
+          <p className="text-xs text-rose-300 mb-4">{error}</p>
+          <ClayButton variant="ghost" size="sm" onClick={loadInitialData}>
+            Retry
+          </ClayButton>
+        </Card>
+      )}
+
       {/* ========================================================================= */}
       {/* SUBTAB 1: OVERVIEW METRICS & DISTRIBUTIONS */}
       {/* ========================================================================= */}
-      {subTab === 'overview' && summary && (
+      {subTab === 'overview' && summary && !loading && (
         <div className="space-y-6">
           {/* Key Metric KPI Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
